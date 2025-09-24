@@ -1,0 +1,9 @@
+[submodule "velodyne"]
+	path = velodyne
+	url = https://github.com/ros-drivers/velodyne.git
+[submodule "angles"]
+	path = angles
+	url = https://github.com/ros/angles.git
+[submodule "diagnostics"]
+	path = diagnostics
+	url = https://github.com/ros/diagnostics.git
