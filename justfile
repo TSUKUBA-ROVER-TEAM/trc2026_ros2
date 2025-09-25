@@ -22,7 +22,7 @@ deps: _cd
 
 # build packages
 build: _cd
-  colcon build --symlink-install --mixin compile-commands ccache mold
+  colcon build --symlink-install
 
 # test packages
 test packages: _cd
