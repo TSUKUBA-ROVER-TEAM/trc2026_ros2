@@ -16,24 +16,22 @@
 
 ### 依存関係のセットアップ
 ```
-rosdep update
-rosdep install --from-paths . --ignore-src -r -y
+just deps
 ```
 
 ### ビルド
 ```
-colcon build --symlink-install
+just b
 ```
 
 ### テスト
 ```
-source install/setup.bash
-colcon test --event-handlers console_direct+ --return-code-on-test-failure
+just test [package_name]
 ```
 
 ### ビルドキャッシュクリア
 ```
-rm -rf build/ install/ log/
+just clean
 ```
 ### システムの起動方法
 ```
