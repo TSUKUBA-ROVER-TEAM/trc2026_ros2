@@ -16,6 +16,10 @@
 
 ### 依存関係のセットアップ
 ```
+sudo apt update
+sudo apt install just
+```
+```
 just deps
 ```
 
@@ -32,9 +36,4 @@ just test [package_name]
 ### ビルドキャッシュクリア
 ```
 just clean
-```
-### システムの起動方法
-```
-source install/setup.bash
-ros2 launch trc2026_bringup trc2026.launch.py
 ```
