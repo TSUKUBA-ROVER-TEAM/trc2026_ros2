@@ -11,3 +11,10 @@ repositories:
         type: git
         url: https://github.com/ros/diagnostics.git
         version: ros2
+    dep/ros_aruco_opencv:
+        type: git
+        url: https://github.com/fictionlab/ros_aruco_opencv.git
+        version: jazzy
+    dep/unilidar_sdk2:  
+        type: git
+        url: https://github.com/TSUKUBA-ROVER-TEAM/unilidar_sdk2.git

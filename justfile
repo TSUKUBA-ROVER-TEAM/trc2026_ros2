@@ -19,6 +19,8 @@ deps: _cd
   sudo apt update
   rosdep update --rosdistro {{ros_distro}}
   rosdep install --from-paths . --ignore-src --rosdistro {{ros_distro}} -y
+  cd dep/unilidar_sdk2/unitree_lidar_sdk/build && cmake .. && make -j2
+
 
 # build packages
 build: _cd
