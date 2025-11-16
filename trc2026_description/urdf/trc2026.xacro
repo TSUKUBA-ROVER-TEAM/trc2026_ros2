@@ -235,70 +235,70 @@
   </collision>
 </link>
 
-<joint name="回転 5" type="continuous">
+<joint name="drive_right_forward_joint" type="continuous">
   <origin xyz="0.0 0.035 -0.2233" rpy="0 0 0"/>
   <parent link="steer_right_forward_link"/>
   <child link="wheel_right_forward_link"/>
   <axis xyz="-0.0 1.0 -0.0"/>
 </joint>
 
-<joint name="回転 8" type="continuous">
+<joint name="steer_right_forward_joint" type="continuous">
   <origin xyz="0.4 -0.256 0.0236" rpy="0 0 0"/>
   <parent link="arm_right_link"/>
   <child link="steer_right_forward_link"/>
   <axis xyz="-0.0 0.0 -1.0"/>
 </joint>
 
-<joint name="回転 9" type="continuous">
+<joint name="drive_right_backward_joint" type="continuous">
   <origin xyz="0.0 0.035 -0.2233" rpy="0 0 0"/>
   <parent link="steer_right_backward_link"/>
   <child link="wheel_right_backward_link"/>
   <axis xyz="-0.0 -1.0 0.0"/>
 </joint>
 
-<joint name="回転 10" type="continuous">
+<joint name="steer_right_backward_joint" type="continuous">
   <origin xyz="-0.4 -0.256 0.0236" rpy="0 0 0"/>
   <parent link="arm_right_link"/>
   <child link="steer_right_backward_link"/>
   <axis xyz="0.0 -0.0 1.0"/>
 </joint>
 
-<joint name="回転 11" type="continuous">
+<joint name="arm_right_joint" type="fixed">
   <origin xyz="0.0 -0.036 0.041" rpy="0 0 0"/>
   <parent link="base_link"/>
   <child link="arm_right_link"/>
   <axis xyz="0.0 1.0 0.0"/>
 </joint>
 
-<joint name="回転 12" type="continuous">
+<joint name="drive_left_forward_joint" type="continuous">
   <origin xyz="0.0 -0.035 -0.2233" rpy="0 0 0"/>
   <parent link="steer_left_forward_link"/>
   <child link="wheel_left_forward_link"/>
   <axis xyz="0.0 1.0 0.0"/>
 </joint>
 
-<joint name="回転 13" type="continuous">
+<joint name="steer_left_forward_joint" type="continuous">
   <origin xyz="0.4 0.256 0.0236" rpy="0 0 0"/>
   <parent link="arm_left_link"/>
   <child link="steer_left_forward_link"/>
   <axis xyz="0.0 0.0 1.0"/>
 </joint>
 
-<joint name="回転 14" type="continuous">
+<joint name="drive_left_backward_joint" type="continuous">
   <origin xyz="0.0 -0.035 -0.2233" rpy="0 0 0"/>
   <parent link="steer_left_backward_link"/>
   <child link="wheel_left_backward_link"/>
   <axis xyz="0.0 -1.0 -0.0"/>
 </joint>
 
-<joint name="回転 15" type="continuous">
+<joint name="steer_left_backward_joint" type="continuous">
   <origin xyz="-0.4 0.256 0.0236" rpy="0 0 0"/>
   <parent link="arm_left_link"/>
   <child link="steer_left_backward_link"/>
   <axis xyz="-0.0 -0.0 -1.0"/>
 </joint>
 
-<joint name="回転 16" type="continuous">
+<joint name="arm_left_joint" type="fixed">
   <origin xyz="0.0 0.036 0.041" rpy="0 0 0"/>
   <parent link="base_link"/>
   <child link="arm_left_link"/>

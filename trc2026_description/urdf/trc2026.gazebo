@@ -3,9 +3,58 @@
 
 <xacro:property name="body_color" value="Gazebo/Silver" />
 
+<ros2_control name="GazeboSimSystem" type="system">
+  <hardware>
+    <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+  </hardware>
+  <joint name="drive_left_forward_joint">
+    <command_interface name="velocity">velocity</command_interface>
+    <state_interface name="position">position</state_interface>
+    <state_interface name="velocity">velocity</state_interface>
+  </joint>
+  <joint name="drive_right_forward_joint">
+    <command_interface name="velocity">velocity</command_interface>
+    <state_interface name="position">position</state_interface>
+    <state_interface name="velocity">velocity</state_interface>
+  </joint>
+  <joint name="drive_left_backward_joint">
+    <command_interface name="velocity">velocity</command_interface>
+    <state_interface name="position">position</state_interface>
+    <state_interface name="velocity">velocity</state_interface>
+  </joint>
+  <joint name="drive_right_backward_joint">
+    <command_interface name="velocity">velocity</command_interface>
+    <state_interface name="position">position</state_interface>
+    <state_interface name="velocity">velocity</state_interface>
+  </joint>
+  <joint name="steer_left_forward_joint">
+    <command_interface name="position">position</command_interface>
+    <state_interface name="position">position</state_interface>
+    <state_interface name="velocity">velocity</state_interface>
+  </joint>
+  <joint name="steer_right_forward_joint">
+    <command_interface name="position">position</command_interface>
+    <state_interface name="position">position</state_interface>
+    <state_interface name="velocity">velocity</state_interface>
+  </joint>
+  <joint name="steer_left_backward_joint">
+    <command_interface name="position">position</command_interface>
+    <state_interface name="position">position</state_interface>
+    <state_interface name="velocity">velocity</state_interface>
+  </joint>
+  <joint name="steer_right_backward_joint">
+    <command_interface name="position">position</command_interface>
+    <state_interface name="position">position</state_interface>
+    <state_interface name="velocity">velocity</state_interface>
+  </joint>
+</ros2_control>
+
 <gazebo>
-  <plugin name="control" filename="libgazebo_ros_control.so"/>
+  <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+    <parameters>$(find trc2026_gazebo)/config/gz_ros2_control.yaml</parameters>
+  </plugin>
 </gazebo>
+
 <gazebo reference="base_link">
   <material>${body_color}</material>
   <mu1>0.2</mu1>

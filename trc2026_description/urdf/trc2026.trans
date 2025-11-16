@@ -1,111 +1,111 @@
 <?xml version="1.0" ?>
 <robot name="trc2026" xmlns:xacro="http://www.ros.org/wiki/xacro" >
 
-<transmission name="回転 5_tran">
+<transmission name="drive_right_forward_joint_tran">
   <type>transmission_interface/SimpleTransmission</type>
-  <joint name="回転 5">
+  <joint name="drive_right_forward_joint">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
   </joint>
-  <actuator name="回転 5_actr">
+  <actuator name="drive_right_forward_joint_actr">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     <mechanicalReduction>1</mechanicalReduction>
   </actuator>
 </transmission>
 
-<transmission name="回転 8_tran">
+<transmission name="steer_right_forward_joint_tran">
   <type>transmission_interface/SimpleTransmission</type>
-  <joint name="回転 8">
+  <joint name="steer_right_forward_joint">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
   </joint>
-  <actuator name="回転 8_actr">
+  <actuator name="steer_right_forward_joint_actr">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     <mechanicalReduction>1</mechanicalReduction>
   </actuator>
 </transmission>
 
-<transmission name="回転 9_tran">
+<transmission name="drive_right_backward_joint_tran">
   <type>transmission_interface/SimpleTransmission</type>
-  <joint name="回転 9">
+  <joint name="drive_right_backward_joint">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
   </joint>
-  <actuator name="回転 9_actr">
+  <actuator name="drive_right_backward_joint_actr">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     <mechanicalReduction>1</mechanicalReduction>
   </actuator>
 </transmission>
 
-<transmission name="回転 10_tran">
+<transmission name="steer_right_backward_joint_tran">
   <type>transmission_interface/SimpleTransmission</type>
-  <joint name="回転 10">
+  <joint name="steer_right_backward_joint">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
   </joint>
-  <actuator name="回転 10_actr">
+  <actuator name="steer_right_backward_joint_actr">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     <mechanicalReduction>1</mechanicalReduction>
   </actuator>
 </transmission>
 
-<transmission name="回転 11_tran">
+<transmission name="arm_right_joint_tran">
   <type>transmission_interface/SimpleTransmission</type>
-  <joint name="回転 11">
+  <joint name="arm_right_joint">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
   </joint>
-  <actuator name="回転 11_actr">
+  <actuator name="arm_right_joint_actr">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     <mechanicalReduction>1</mechanicalReduction>
   </actuator>
 </transmission>
 
-<transmission name="回転 12_tran">
+<transmission name="drive_left_forward_joint_tran">
   <type>transmission_interface/SimpleTransmission</type>
-  <joint name="回転 12">
+  <joint name="drive_left_forward_joint">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
   </joint>
-  <actuator name="回転 12_actr">
+  <actuator name="drive_left_forward_joint_actr">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     <mechanicalReduction>1</mechanicalReduction>
   </actuator>
 </transmission>
 
-<transmission name="回転 13_tran">
+<transmission name="steer_left_forward_joint_tran">
   <type>transmission_interface/SimpleTransmission</type>
-  <joint name="回転 13">
+  <joint name="steer_left_forward_joint">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
   </joint>
-  <actuator name="回転 13_actr">
+  <actuator name="steer_left_forward_joint_actr">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     <mechanicalReduction>1</mechanicalReduction>
   </actuator>
 </transmission>
 
-<transmission name="回転 14_tran">
+<transmission name="drive_left_backward_joint_tran">
   <type>transmission_interface/SimpleTransmission</type>
-  <joint name="回転 14">
+  <joint name="drive_left_backward_joint">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
   </joint>
-  <actuator name="回転 14_actr">
+  <actuator name="drive_left_backward_joint_actr">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     <mechanicalReduction>1</mechanicalReduction>
   </actuator>
 </transmission>
 
-<transmission name="回転 15_tran">
+<transmission name="steer_left_backward_joint_tran">
   <type>transmission_interface/SimpleTransmission</type>
-  <joint name="回転 15">
+  <joint name="steer_left_backward_joint">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
   </joint>
-  <actuator name="回転 15_actr">
+  <actuator name="steer_left_backward_joint_actr">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     <mechanicalReduction>1</mechanicalReduction>
   </actuator>
 </transmission>
 
-<transmission name="回転 16_tran">
+<transmission name="arm_left_joint_tran">
   <type>transmission_interface/SimpleTransmission</type>
-  <joint name="回転 16">
+  <joint name="arm_left_joint">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
   </joint>
-  <actuator name="回転 16_actr">
+  <actuator name="arm_left_joint_actr">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     <mechanicalReduction>1</mechanicalReduction>
   </actuator>
