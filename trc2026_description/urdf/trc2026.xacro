@@ -25,7 +25,7 @@
   </collision>
 </link>
 
-<link name="wheel_right_forward_link_1">
+<link name="wheel_right_forward_link">
   <inertial>
     <origin xyz="6.208906921600921e-06 -0.03392279680272886 2.665693084685783e-06" rpy="0 0 0"/>
     <mass value="15.991825224265266"/>
@@ -34,19 +34,19 @@
   <visual>
     <origin xyz="-0.4 0.257 0.1587" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/wheel_right_forward_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/wheel_right_forward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="-0.4 0.257 0.1587" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/wheel_right_forward_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/wheel_right_forward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
 
-<link name="steer_right_forward_link_1">
+<link name="steer_right_forward_link">
   <inertial>
     <origin xyz="9.4892602410801e-05 0.0606495493514779 -0.1482898116924078" rpy="0 0 0"/>
     <mass value="2.939652709869844"/>
@@ -55,19 +55,19 @@
   <visual>
     <origin xyz="-0.4 0.292 -0.0646" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/steer_right_forward_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/steer_right_forward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="-0.4 0.292 -0.0646" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/steer_right_forward_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/steer_right_forward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
 
-<link name="wheel_right_backward_link_1">
+<link name="wheel_right_backward_link">
   <inertial>
     <origin xyz="-6.264940802247487e-06 -0.03392278637457424 -2.5014684090218786e-06" rpy="0 0 0"/>
     <mass value="15.99180255275599"/>
@@ -76,19 +76,19 @@
   <visual>
     <origin xyz="0.4 0.257 0.1587" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/wheel_right_backward_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/wheel_right_backward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="0.4 0.257 0.1587" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/wheel_right_backward_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/wheel_right_backward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
 
-<link name="steer_right_backward_link_1">
+<link name="steer_right_backward_link">
   <inertial>
     <origin xyz="-9.48930291901906e-05 0.06064954512696477 -0.1482898108097947" rpy="0 0 0"/>
     <mass value="2.9396525079858002"/>
@@ -97,19 +97,19 @@
   <visual>
     <origin xyz="0.4 0.292 -0.0646" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/steer_right_backward_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/steer_right_backward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="0.4 0.292 -0.0646" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/steer_right_backward_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/steer_right_backward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
 
-<link name="arm_right_link_1">
+<link name="arm_right_link">
   <inertial>
     <origin xyz="-0.00014528539680006377 -0.22752633452724644 0.0012918534070657656" rpy="0 0 0"/>
     <mass value="5.0711325566586964"/>
@@ -118,19 +118,19 @@
   <visual>
     <origin xyz="0.0 0.036 -0.041" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/arm_right_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/arm_right_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="0.0 0.036 -0.041" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/arm_right_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/arm_right_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
 
-<link name="wheel_left_forward_link_1">
+<link name="wheel_left_forward_link">
   <inertial>
     <origin xyz="6.264940837497068e-06 0.03392278637456081 -2.501468379573213e-06" rpy="0 0 0"/>
     <mass value="15.99180255275599"/>
@@ -139,40 +139,40 @@
   <visual>
     <origin xyz="-0.4 -0.257 0.1587" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/wheel_left_forward_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/wheel_left_forward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="-0.4 -0.257 0.1587" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/wheel_left_forward_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/wheel_left_forward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
 
-<link name="steer_left_forward_link_1">
+<link name="steer_left_forward_link">
   <inertial>
     <origin xyz="9.48930291901906e-05 0.5233504548730352 -0.019689810809794678" rpy="0 0 0"/>
     <mass value="2.9396525079858002"/>
     <inertia ixx="0.023888" iyy="0.018044" izz="0.00734" ixy="9e-06" iyz="-0.007893" ixz="-1.1e-05"/>
   </inertial>
   <visual>
-    <origin xyz="-0.4 0.292 0.064" rpy="0 0 0"/>
+    <origin xyz="-0.4 -0.292 -0.064" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/steer_left_forward_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/steer_left_forward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
-    <origin xyz="-0.4 0.292 0.064" rpy="0 0 0"/>
+    <origin xyz="-0.4 -0.292 -0.064" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/steer_left_forward_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/steer_left_forward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
 
-<link name="wheel_left_backward_link_1">
+<link name="wheel_left_backward_link">
   <inertial>
     <origin xyz="-6.275711124770211e-06 0.03392279680272897 -2.5056050398652996e-06" rpy="0 0 0"/>
     <mass value="15.991825224265268"/>
@@ -181,40 +181,40 @@
   <visual>
     <origin xyz="0.4 -0.257 0.1587" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/wheel_left_backward_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/wheel_left_backward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="0.4 -0.257 0.1587" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/wheel_left_backward_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/wheel_left_backward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
 
-<link name="steer_left_backward_link_1">
+<link name="steer_left_backward_link">
   <inertial>
     <origin xyz="-9.489260241096753e-05 0.5233504506485226 -0.019689811692407758" rpy="0 0 0"/>
     <mass value="2.9396527098698444"/>
     <inertia ixx="0.023888" iyy="0.018044" izz="0.00734" ixy="-9e-06" iyz="-0.007893" ixz="1.1e-05"/>
   </inertial>
   <visual>
-    <origin xyz="0.4 0.292 0.064" rpy="0 0 0"/>
+    <origin xyz="0.4 -0.292 -0.064" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/steer_left_backward_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/steer_left_backward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
-    <origin xyz="0.4 0.292 0.064" rpy="0 0 0"/>
+    <origin xyz="0.4 -0.292 -0.064" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/steer_left_backward_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/steer_left_backward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
 
-<link name="arm_left_link_1">
+<link name="arm_left_link">
   <inertial>
     <origin xyz="-0.00014528539611865262 0.22752633467722524 0.0012918534957305841" rpy="0 0 0"/>
     <mass value="5.071132580446492"/>
@@ -223,85 +223,85 @@
   <visual>
     <origin xyz="0.0 -0.036 -0.041" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/arm_left_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/arm_left_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="0.0 -0.036 -0.041" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/arm_left_link_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="file://$(find trc2026_description)/meshes/arm_left_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
 
 <joint name="回転 5" type="continuous">
   <origin xyz="0.0 0.035 -0.2233" rpy="0 0 0"/>
-  <parent link="steer_right_forward_link_1"/>
-  <child link="wheel_right_forward_link_1"/>
+  <parent link="steer_right_forward_link"/>
+  <child link="wheel_right_forward_link"/>
   <axis xyz="-0.0 1.0 -0.0"/>
 </joint>
 
 <joint name="回転 8" type="continuous">
   <origin xyz="0.4 -0.256 0.0236" rpy="0 0 0"/>
-  <parent link="arm_right_link_1"/>
-  <child link="steer_right_forward_link_1"/>
+  <parent link="arm_right_link"/>
+  <child link="steer_right_forward_link"/>
   <axis xyz="-0.0 0.0 -1.0"/>
 </joint>
 
 <joint name="回転 9" type="continuous">
   <origin xyz="0.0 0.035 -0.2233" rpy="0 0 0"/>
-  <parent link="steer_right_backward_link_1"/>
-  <child link="wheel_right_backward_link_1"/>
+  <parent link="steer_right_backward_link"/>
+  <child link="wheel_right_backward_link"/>
   <axis xyz="-0.0 -1.0 0.0"/>
 </joint>
 
 <joint name="回転 10" type="continuous">
   <origin xyz="-0.4 -0.256 0.0236" rpy="0 0 0"/>
-  <parent link="arm_right_link_1"/>
-  <child link="steer_right_backward_link_1"/>
+  <parent link="arm_right_link"/>
+  <child link="steer_right_backward_link"/>
   <axis xyz="0.0 -0.0 1.0"/>
 </joint>
 
 <joint name="回転 11" type="continuous">
   <origin xyz="0.0 -0.036 0.041" rpy="0 0 0"/>
   <parent link="base_link"/>
-  <child link="arm_right_link_1"/>
+  <child link="arm_right_link"/>
   <axis xyz="0.0 1.0 0.0"/>
 </joint>
 
 <joint name="回転 12" type="continuous">
-  <origin xyz="0.0 0.549 -0.0947" rpy="0 0 0"/>
-  <parent link="steer_left_forward_link_1"/>
-  <child link="wheel_left_forward_link_1"/>
+  <origin xyz="0.0 -0.035 -0.2233" rpy="0 0 0"/>
+  <parent link="steer_left_forward_link"/>
+  <child link="wheel_left_forward_link"/>
   <axis xyz="0.0 1.0 0.0"/>
 </joint>
 
 <joint name="回転 13" type="continuous">
-  <origin xyz="0.4 -0.328 -0.105" rpy="0 0 0"/>
-  <parent link="arm_left_link_1"/>
-  <child link="steer_left_forward_link_1"/>
+  <origin xyz="0.4 0.256 0.0236" rpy="0 0 0"/>
+  <parent link="arm_left_link"/>
+  <child link="steer_left_forward_link"/>
   <axis xyz="0.0 0.0 1.0"/>
 </joint>
 
 <joint name="回転 14" type="continuous">
-  <origin xyz="0.0 0.549 -0.0947" rpy="0 0 0"/>
-  <parent link="steer_left_backward_link_1"/>
-  <child link="wheel_left_backward_link_1"/>
+  <origin xyz="0.0 -0.035 -0.2233" rpy="0 0 0"/>
+  <parent link="steer_left_backward_link"/>
+  <child link="wheel_left_backward_link"/>
   <axis xyz="0.0 -1.0 -0.0"/>
 </joint>
 
 <joint name="回転 15" type="continuous">
-  <origin xyz="-0.4 -0.328 -0.105" rpy="0 0 0"/>
-  <parent link="arm_left_link_1"/>
-  <child link="steer_left_backward_link_1"/>
+  <origin xyz="-0.4 0.256 0.0236" rpy="0 0 0"/>
+  <parent link="arm_left_link"/>
+  <child link="steer_left_backward_link"/>
   <axis xyz="-0.0 -0.0 -1.0"/>
 </joint>
 
 <joint name="回転 16" type="continuous">
   <origin xyz="0.0 0.036 0.041" rpy="0 0 0"/>
   <parent link="base_link"/>
-  <child link="arm_left_link_1"/>
+  <child link="arm_left_link"/>
   <axis xyz="-0.0 1.0 -0.0"/>
 </joint>
 

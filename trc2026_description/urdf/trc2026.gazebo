@@ -14,70 +14,70 @@
   <gravity>true</gravity>
 </gazebo>
 
-<gazebo reference="wheel_right_forward_link_1">
+<gazebo reference="wheel_right_forward_link">
   <material>${body_color}</material>
   <mu1>0.2</mu1>
   <mu2>0.2</mu2>
   <self_collide>true</self_collide>
 </gazebo>
 
-<gazebo reference="steer_right_forward_link_1">
+<gazebo reference="steer_right_forward_link">
   <material>${body_color}</material>
   <mu1>0.2</mu1>
   <mu2>0.2</mu2>
   <self_collide>true</self_collide>
 </gazebo>
 
-<gazebo reference="wheel_right_backward_link_1">
+<gazebo reference="wheel_right_backward_link">
   <material>${body_color}</material>
   <mu1>0.2</mu1>
   <mu2>0.2</mu2>
   <self_collide>true</self_collide>
 </gazebo>
 
-<gazebo reference="steer_right_backward_link_1">
+<gazebo reference="steer_right_backward_link">
   <material>${body_color}</material>
   <mu1>0.2</mu1>
   <mu2>0.2</mu2>
   <self_collide>true</self_collide>
 </gazebo>
 
-<gazebo reference="arm_right_link_1">
+<gazebo reference="arm_right_link">
   <material>${body_color}</material>
   <mu1>0.2</mu1>
   <mu2>0.2</mu2>
   <self_collide>true</self_collide>
 </gazebo>
 
-<gazebo reference="wheel_left_forward_link_1">
+<gazebo reference="wheel_left_forward_link">
   <material>${body_color}</material>
   <mu1>0.2</mu1>
   <mu2>0.2</mu2>
   <self_collide>true</self_collide>
 </gazebo>
 
-<gazebo reference="steer_left_forward_link_1">
+<gazebo reference="steer_left_forward_link">
   <material>${body_color}</material>
   <mu1>0.2</mu1>
   <mu2>0.2</mu2>
   <self_collide>true</self_collide>
 </gazebo>
 
-<gazebo reference="wheel_left_backward_link_1">
+<gazebo reference="wheel_left_backward_link">
   <material>${body_color}</material>
   <mu1>0.2</mu1>
   <mu2>0.2</mu2>
   <self_collide>true</self_collide>
 </gazebo>
 
-<gazebo reference="steer_left_backward_link_1">
+<gazebo reference="steer_left_backward_link">
   <material>${body_color}</material>
   <mu1>0.2</mu1>
   <mu2>0.2</mu2>
   <self_collide>true</self_collide>
 </gazebo>
 
-<gazebo reference="arm_left_link_1">
+<gazebo reference="arm_left_link">
   <material>${body_color}</material>
   <mu1>0.2</mu1>
   <mu2>0.2</mu2>
