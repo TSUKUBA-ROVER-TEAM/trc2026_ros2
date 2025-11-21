@@ -1,17 +1,3 @@
-# Copyright 2025 Kengo
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import os
 import tempfile
 
@@ -27,7 +13,7 @@ from launch.actions import (
     RegisterEventHandler,
 )
 from launch.conditions import IfCondition, UnlessCondition
-from launch.event_handlers import OnShutdown
+from launch.event_handlers import OnShutdown, OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration
 
@@ -37,18 +23,19 @@ from launch_ros.actions import Node
 def generate_launch_description():
     sim_pkg_name = 'trc2026_gazebo'
     desc_pkg_name = 'trc2026_description'
-
+    controller_pkg_name = 'trc2026_control'
+    
     sim_dir = get_package_share_directory(sim_pkg_name)
     desc_dir = get_package_share_directory(desc_pkg_name)
-
+    controller_dir = get_package_share_directory(controller_pkg_name)
     ros_gz_sim_dir = get_package_share_directory('ros_gz_sim')
 
-    # Launch configuration variables specific to simulation
     namespace = LaunchConfiguration('namespace')
     use_sim_time = LaunchConfiguration('use_sim_time')
     headless = LaunchConfiguration('headless')
     world = LaunchConfiguration('world')
     use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
+    use_simulator = LaunchConfiguration('use_simulator')
 
     pose = {
         'x': LaunchConfiguration('x_pose', default='1.00'),
@@ -66,40 +53,37 @@ def generate_launch_description():
     declare_namespace_cmd = DeclareLaunchArgument(
         'namespace', default_value='', description='Top-level namespace'
     )
-
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
         default_value='True',
         description='Use simulation (Gazebo) clock if true',
     )
-
     declare_use_robot_state_pub_cmd = DeclareLaunchArgument(
         'use_robot_state_pub',
         default_value='True',
         description='Whether to start the robot state publisher',
     )
-
     declare_simulator_cmd = DeclareLaunchArgument(
         'headless', default_value='False', description='Whether to execute gzclient)'
     )
-
     declare_world_cmd = DeclareLaunchArgument(
         'world',
         default_value=os.path.join(sim_dir, 'worlds', 'field_red.sdf'),
         description='Full path to world model file to load',
     )
-
     declare_robot_name_cmd = DeclareLaunchArgument(
         'robot_name', default_value='trc2026', description='name of the robot'
     )
-
     declare_robot_sdf_cmd = DeclareLaunchArgument(
         'robot_sdf',
         default_value=os.path.join(desc_dir, 'urdf', 'trc2026.xacro'),
         description='Full path to robot sdf file to spawn the robot in gazebo',
     )
+    declare_use_simulator_cmd = DeclareLaunchArgument(
+        'use_simulator',
+        default_value='True',
+        description='Whether to start the simulator')
 
-    # ロボットのURDF/XACROを読み込み、/robot_descriptionトピックにパブリッシュ
     start_robot_state_publisher_cmd = Node(
         condition=IfCondition(use_robot_state_pub),
         package='robot_state_publisher',
@@ -128,6 +112,50 @@ def generate_launch_description():
         name='joint_state_publisher_gui'
     )
 
+    bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='bridge_ros_gz',
+        namespace=namespace,
+        parameters=[
+            {
+                'config_file': os.path.join(
+                    sim_dir, 'config', 'ros_gz_bridge.yaml'
+                ),
+                'use_sim_time': use_sim_time,
+                'qos_overrides./scan.subscriber.reliability': 'best_effort',
+                'qos_overrides./scan.subscriber.durability': 'volatile',
+                'qos_overrides./scan.subscriber.depth': 10,
+                'qos_overrides./imu.subscriber.reliability': 'best_effort',
+                'qos_overrides./imu.subscriber.durability': 'volatile',
+                'qos_overrides./imu.subscriber.depth': 10
+            }
+        ],
+        output='screen'
+    )
+
+    camera_bridge_image = Node(
+        package='ros_gz_image',
+        executable='image_bridge',
+        name='bridge_gz_ros_camera_image',
+        namespace=namespace,
+        output='screen',
+        parameters=[{
+            'use_sim_time': use_sim_time,
+        }],
+        arguments=['/rgbd_camera/image'])
+
+    camera_bridge_depth = Node(
+        package='ros_gz_image',
+        executable='image_bridge',
+        name='bridge_gz_ros_camera_depth',
+        namespace=namespace,
+        output='screen',
+        parameters=[{
+            'use_sim_time': use_sim_time,
+        }],
+        arguments=['/rgbd_camera/depth_image'])
+
     world_sdf = tempfile.mktemp(prefix='gz_sim_', suffix='.sdf')
     world_sdf_xacro = ExecuteProcess(
         cmd=['xacro', '-o', world_sdf, ['headless:=', headless], world]
@@ -139,7 +167,6 @@ def generate_launch_description():
                            if os.path.exists(world_sdf) else None)
         ]))
 
-    # Gazebo/Ignition Simulation サーバーの起動
     gazebo_server = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(ros_gz_sim_dir, 'launch', 'gz_sim.launch.py')
@@ -147,39 +174,78 @@ def generate_launch_description():
         launch_arguments={'gz_args': ['-r -s ', world_sdf]}.items(),
     )
 
-    # Gazebo/Ignition Simulation クライアント (GUI) の起動
     gazebo_client = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(ros_gz_sim_dir, 'launch', 'gz_sim.launch.py')
         ),
-        condition=UnlessCondition(headless),  # headless=Falseの場合のみGUIを起動
+        condition=UnlessCondition(headless),
         launch_arguments={'gz_args': ['-v4 -g']}.items(),
     )
 
-    # GZ_SIM_RESOURCE_PATH 環境変数の設定 (モデルパスの追加)
     set_env_vars_resources = AppendEnvironmentVariable(
         'GZ_SIM_RESOURCE_PATH',
         os.path.join(sim_dir, 'worlds') + ':' + os.path.join(sim_dir, 'models')
     )
+    
+    spawn_robot_node = Node(
+        condition=IfCondition(use_simulator),
+        package='ros_gz_sim',
+        executable='create',
+        namespace=namespace,
+        output='screen',
+        arguments=[
+            '-name', robot_name,
+            '-topic', 'robot_description',
+            '-x', pose['x'], '-y', pose['y'], '-z', pose['z'],
+            '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']],
+        parameters=[{'use_sim_time': use_sim_time}]
+    )
 
-    # ロボットのスポーン
-    gz_robot = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(sim_dir, 'launch', 'spawn.launch.py')),
-        launch_arguments={'namespace': namespace,
-                          'use_sim_time': use_sim_time,
-                          'robot_name': robot_name,
-                          'robot_sdf': robot_sdf,
-                          'x_pose': pose['x'],
-                          'y_pose': pose['y'],
-                          'z_pose': pose['z'],
-                          'roll': pose['R'],
-                          'pitch': pose['P'],
-                          'yaw': pose['Y']}.items())
+    four_wheel_steer_controller_node = Node(
+        package=controller_pkg_name,
+        executable='four_wheel_steer_controller_node',
+        name='four_wheel_steer_controller',
+        namespace=namespace,
+        output='screen',
+    )
+    
+    load_joint_state_controller = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller',
+             '--set-state', 'active', 'joint_state_broadcaster'],
+        output='screen'
+    )
+
+    load_drive_controller = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller',
+             '--set-state', 'active', 'drive_controller'],
+        output='screen'
+    )
+
+    load_steer_controller = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller',
+             '--set-state', 'active', 'steer_controller'],
+        output='screen'
+    )
+
+    robot_spawn_event_handler = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=spawn_robot_node,
+            on_exit=[load_joint_state_controller],
+        )
+    )
+    
+    joint_state_controller_event_handler = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=load_joint_state_controller,
+            on_exit=[
+                load_drive_controller,
+                load_steer_controller,
+            ],
+        )
+    )
 
     ld = LaunchDescription()
 
-    # Declare the launch options
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_use_robot_state_pub_cmd)
@@ -187,17 +253,27 @@ def generate_launch_description():
     ld.add_action(declare_world_cmd)
     ld.add_action(declare_robot_name_cmd)
     ld.add_action(declare_robot_sdf_cmd)
+    ld.add_action(declare_use_simulator_cmd)
 
     ld.add_action(set_env_vars_resources)
     ld.add_action(world_sdf_xacro)
+    ld.add_action(remove_temp_sdf_file)
+
     ld.add_action(gazebo_server)
     ld.add_action(gazebo_client)
-    ld.add_action(gz_robot)
-
+    
     ld.add_action(start_robot_state_publisher_cmd)
+    ld.add_action(spawn_robot_node)
+    ld.add_action(four_wheel_steer_controller_node)
+
+    ld.add_action(bridge)
+    ld.add_action(camera_bridge_image)
+    ld.add_action(camera_bridge_depth)
+
     ld.add_action(joint_state_publisher_gui_cmd)
     ld.add_action(joint_state_publisher_cmd)
 
-    ld.add_action(remove_temp_sdf_file)
+    ld.add_action(robot_spawn_event_handler)
+    ld.add_action(joint_state_controller_event_handler)
 
     return ld

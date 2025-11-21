@@ -2,5 +2,43 @@ controller_manager:
   ros__parameters:
     update_rate: 100  # Hz
 
+    drive_controller:
+      type: forward_command_controller/ForwardCommandController
+
+    steer_controller:
+      type: forward_command_controller/ForwardCommandController
+
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
+
+    joint_state_controller:
+      type: joint_state_controller/JointStateController
+
+
+drive_controller:
+  ros__parameters:
+    joints:
+      - drive_left_forward_joint
+      - drive_right_forward_joint
+      - drive_left_backward_joint
+      - drive_right_backward_joint
+    interface_name: velocity
+    command_interfaces:
+      - velocity
+    state_interfaces:
+      - position
+      - velocity
+
+steer_controller:
+  ros__parameters:
+    joints:
+      - steer_left_forward_joint
+      - steer_right_forward_joint
+      - steer_left_backward_joint
+      - steer_right_backward_joint
+    interface_name: position
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
