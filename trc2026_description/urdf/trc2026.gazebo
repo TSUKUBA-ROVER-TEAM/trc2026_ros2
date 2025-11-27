@@ -3,6 +3,8 @@
 
 <xacro:property name="body_color" value="Gazebo/Silver" />
 
+<xacro:arg name="gazebo"                       default="ignition" />
+
 <ros2_control name="GazeboSimSystem" type="system">
   <hardware>
     <plugin>gz_ros2_control/GazeboSimSystem</plugin>
@@ -131,6 +133,92 @@
   <mu1>0.2</mu1>
   <mu2>0.2</mu2>
   <self_collide>true</self_collide>
+</gazebo>
+
+<gazebo reference="imu_link">
+    <sensor name="imu_sensor" type="imu">
+    <always_on>1</always_on>
+    <update_rate>10</update_rate>
+    <visualize>true</visualize>
+    <topic>imu</topic>
+    <gz_frame_id>imu_link</gz_frame_id>
+    </sensor>
+</gazebo>
+
+<gazebo reference="base_scan">
+  <sensor name='gpu_lidar' type='gpu_lidar'>
+    <gz_frame_id>base_scan</gz_frame_id>
+    <topic>scan</topic>
+    <update_rate>10</update_rate>
+    <ray>
+        <scan>
+            <horizontal>
+                <samples>640</samples>
+                <resolution>1</resolution>
+                <min_angle>-3.14</min_angle>
+                <max_angle>3.14</max_angle>
+            </horizontal>
+            <vertical>
+                <samples>1</samples>
+                <resolution>0.01</resolution>
+                <min_angle>0</min_angle>
+                <max_angle>0</max_angle>
+            </vertical>
+        </scan>
+        <range>
+            <min>0.08</min>
+            <max>10.0</max>
+            <resolution>0.01</resolution>
+        </range>
+    </ray>
+    <always_on>1</always_on>
+    <visualize>true</visualize>
+  <intensity>
+    <visualize>true</visualize>
+    <enabled>true</enabled>
+    <topic>intensity</topic>
+  </intensity>
+  </sensor>
+</gazebo>
+
+<gazebo reference="camera_link">
+  <sensor name="rgb_camera" type="camera">
+    <gz_frame_id>camera_link</gz_frame_id>
+    <topic>rgbd_camera/color_image</topic>
+    <update_rate>10.0</update_rate>
+    <visualize>true</visualize>
+    <camera name="trc2026_camera">
+      <horizontal_fov>1.047</horizontal_fov> <image>
+        <width>640</width>
+        <height>480</height>
+        <format>R8G8B8</format>
+      </image>
+      <clip>
+        <near>0.05</near>
+        <far>100</far>
+      </clip>
+    </camera>
+  </sensor>
+</gazebo>
+
+<gazebo reference="camera_link">
+  <sensor name="depth_camera" type="depth_camera">
+    <gz_frame_id>camera_link</gz_frame_id>
+    <topic>rgbd_camera/depth_image</topic>
+    <update_rate>10.0</update_rate>
+    <visualize>true</visualize>
+    <camera name="trc2026_camera">
+      <horizontal_fov>1.047</horizontal_fov> <image>
+        <width>640</width>
+        <height>480</height>
+        <format>R8G8B8</format>
+      </image>
+      <clip>
+        <near>0.05</near>
+        <far>100</far>
+      </clip>
+    </camera>
+  </sensor>
 </gazebo>
 
 </robot>

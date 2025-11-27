@@ -40,7 +40,7 @@ def generate_launch_description():
     pose = {
         'x': LaunchConfiguration('x_pose', default='0.00'),
         'y': LaunchConfiguration('y_pose', default='0.00'),
-        'z': LaunchConfiguration('z_pose', default='0.00'),
+        'z': LaunchConfiguration('z_pose', default='0.300'),
         'R': LaunchConfiguration('roll', default='0.00'),
         'P': LaunchConfiguration('pitch', default='0.00'),
         'Y': LaunchConfiguration('yaw', default='0.00'),
@@ -68,7 +68,7 @@ def generate_launch_description():
     )
     declare_world_cmd = DeclareLaunchArgument(
         'world',
-        default_value=os.path.join(sim_dir, 'worlds', 'mars_curiosity.world'),
+        default_value=os.path.join(sim_dir, 'worlds', 'empty.sdf'),
         description='Full path to world model file to load',
     )
     declare_robot_name_cmd = DeclareLaunchArgument(
@@ -143,7 +143,7 @@ def generate_launch_description():
         parameters=[{
             'use_sim_time': use_sim_time,
         }],
-        arguments=['/rgbd_camera/image'])
+        arguments=['/rgbd_camera/color_image'])
 
     camera_bridge_depth = Node(
         package='ros_gz_image',
