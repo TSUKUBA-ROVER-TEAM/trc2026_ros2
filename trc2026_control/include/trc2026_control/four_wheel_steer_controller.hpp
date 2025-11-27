@@ -5,6 +5,8 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
 
+#include <cmath>
+
 namespace trc2026_control
 {
 class FourWheelSteerController: public rclcpp::Node
@@ -18,11 +20,15 @@ private:
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr drive_cmd_pub_;
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr steer_cmd_pub_;
 
-    double wheel_base_;
-    double track_width_;
-    double wheel_radius_;
+    std::array <double, 4> wheel_angles_;
 
-    double epsilon_;
+    double base_length_;
+    double base_width_;
+    double wheel_radius_;
+    
+    double x_vel_scale_;
+    double y_vel_scale_;
+    double yaw_vel_scale_;
 };
 }  // namespace trc2026_control
 

@@ -12,9 +12,9 @@ void DriveManualController::joy_callback(const sensor_msgs::msg::Joy::SharedPtr 
 {
   auto cmd_vel_msg = geometry_msgs::msg::Twist();
 
-  cmd_vel_msg.linear.x = msg->axes[3];
-  cmd_vel_msg.linear.y = msg->axes[2] * 1.0;
-  cmd_vel_msg.angular.z = msg->axes[0] * -1.0;
+  cmd_vel_msg.linear.x = msg->axes[4];
+  cmd_vel_msg.linear.y = msg->axes[3];
+  cmd_vel_msg.angular.z = msg->axes[0];
 
   cmd_vel_publisher_->publish(cmd_vel_msg);
 }
