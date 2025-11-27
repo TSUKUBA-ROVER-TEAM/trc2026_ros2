@@ -38,9 +38,9 @@ def generate_launch_description():
     use_simulator = LaunchConfiguration('use_simulator')
 
     pose = {
-        'x': LaunchConfiguration('x_pose', default='1.00'),
-        'y': LaunchConfiguration('y_pose', default='-5.20'),
-        'z': LaunchConfiguration('z_pose', default='0.305'),
+        'x': LaunchConfiguration('x_pose', default='0.00'),
+        'y': LaunchConfiguration('y_pose', default='0.00'),
+        'z': LaunchConfiguration('z_pose', default='0.00'),
         'R': LaunchConfiguration('roll', default='0.00'),
         'P': LaunchConfiguration('pitch', default='0.00'),
         'Y': LaunchConfiguration('yaw', default='0.00'),
@@ -68,7 +68,7 @@ def generate_launch_description():
     )
     declare_world_cmd = DeclareLaunchArgument(
         'world',
-        default_value=os.path.join(sim_dir, 'worlds', 'field_red.sdf'),
+        default_value=os.path.join(sim_dir, 'worlds', 'mars_curiosity.world'),
         description='Full path to world model file to load',
     )
     declare_robot_name_cmd = DeclareLaunchArgument(
