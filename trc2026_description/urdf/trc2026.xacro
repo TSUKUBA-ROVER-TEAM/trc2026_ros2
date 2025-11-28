@@ -5,6 +5,13 @@
 <xacro:include filename="$(find trc2026_description)/urdf/trc2026.trans" />
 <xacro:include filename="$(find trc2026_description)/urdf/trc2026.gazebo" />
 
+<link name="base_footprint"/>
+<joint name="base_link_joint" type="fixed">
+  <parent link="base_footprint"/>
+  <child link="base_link"/>
+  <origin xyz="0 0 0.30" rpy="0 0 0"/>
+ </joint>
+
 <link name="base_link">
   <inertial>
     <origin xyz="0.010831502496829477 0.00019279245362509686 0.0573380567292969" rpy="0 0 0"/>
@@ -238,7 +245,7 @@
 
 <link name="base_scan">
     <inertial>
-        <origin xyz="0 0 4" rpy="0 0 0"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
         <mass value="0.1"/>
         <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/>
     </inertial>
@@ -339,7 +346,7 @@
 <joint name="lidar_joint" type="fixed">
     <parent link="base_link"/>
     <child link="base_scan"/>
-    <origin xyz="0.055 0 0.13" rpy="0 0 0"/>
+    <origin xyz="0.055 0 0.2" rpy="0 0 0"/>
 </joint>
 
 <joint name="camera_joint" type="fixed">

@@ -23,11 +23,9 @@ from launch_ros.actions import Node
 def generate_launch_description():
     sim_pkg_name = 'trc2026_gazebo'
     desc_pkg_name = 'trc2026_description'
-    controller_pkg_name = 'trc2026_control'
     
     sim_dir = get_package_share_directory(sim_pkg_name)
     desc_dir = get_package_share_directory(desc_pkg_name)
-    controller_dir = get_package_share_directory(controller_pkg_name)
     ros_gz_sim_dir = get_package_share_directory('ros_gz_sim')
 
     namespace = LaunchConfiguration('namespace')
@@ -40,7 +38,7 @@ def generate_launch_description():
     pose = {
         'x': LaunchConfiguration('x_pose', default='0.00'),
         'y': LaunchConfiguration('y_pose', default='0.00'),
-        'z': LaunchConfiguration('z_pose', default='0.300'),
+        'z': LaunchConfiguration('z_pose', default='0.00'),
         'R': LaunchConfiguration('roll', default='0.00'),
         'P': LaunchConfiguration('pitch', default='0.00'),
         'Y': LaunchConfiguration('yaw', default='0.00'),
@@ -99,17 +97,10 @@ def generate_launch_description():
     )
 
     joint_state_publisher_cmd = Node(
-        condition=IfCondition(headless),
         package='joint_state_publisher',
         executable='joint_state_publisher',
-        name='joint_state_publisher'
-    )
-
-    joint_state_publisher_gui_cmd = Node(
-        condition=UnlessCondition(headless),
-        package='joint_state_publisher_gui',
-        executable='joint_state_publisher_gui',
-        name='joint_state_publisher_gui'
+        name='joint_state_publisher',
+        parameters=[{'use_sim_time': use_sim_time}]
     )
 
     bridge = Node(
@@ -200,14 +191,6 @@ def generate_launch_description():
             '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']],
         parameters=[{'use_sim_time': use_sim_time}]
     )
-
-    four_wheel_steer_controller_node = Node(
-        package=controller_pkg_name,
-        executable='four_wheel_steer_controller_node',
-        name='four_wheel_steer_controller',
-        namespace=namespace,
-        output='screen',
-    )
     
     load_joint_state_controller = ExecuteProcess(
         cmd=['ros2', 'control', 'load_controller',
@@ -264,16 +247,15 @@ def generate_launch_description():
     
     ld.add_action(start_robot_state_publisher_cmd)
     ld.add_action(spawn_robot_node)
-    ld.add_action(four_wheel_steer_controller_node)
 
     ld.add_action(bridge)
     ld.add_action(camera_bridge_image)
     ld.add_action(camera_bridge_depth)
 
-    ld.add_action(joint_state_publisher_gui_cmd)
     ld.add_action(joint_state_publisher_cmd)
 
     ld.add_action(robot_spawn_event_handler)
     ld.add_action(joint_state_controller_event_handler)
+    
 
     return ld
