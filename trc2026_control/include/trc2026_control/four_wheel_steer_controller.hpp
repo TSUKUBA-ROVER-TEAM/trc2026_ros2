@@ -43,7 +43,7 @@ private:
   double odom_x_;
   double odom_y_;
   double odom_yaw_;
-  
+
   rclcpp::Time last_time_;
 
   geometry_msgs::msg::Twist current_cmd_vel_;

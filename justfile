@@ -26,9 +26,9 @@ build: _cd
   colcon build --symlink-install
 
 # test packages
-test packages: _cd
+test: _cd
   source install/setup.bash && \
-  colcon test --event-handlers console_direct+ --return-code-on-test-failure --packages-select {{packages}}
+  colcon test --event-handlers console_direct+ --return-code-on-test-failure
 
 # generate documentation
 doc packages: _cd

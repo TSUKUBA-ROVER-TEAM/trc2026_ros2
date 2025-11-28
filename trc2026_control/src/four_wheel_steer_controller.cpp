@@ -44,7 +44,7 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   auto odom_period = std::chrono::milliseconds(20);
   odom_timer_ = this->create_wall_timer(
     odom_period, std::bind(&FourWheelSteerController::publish_odom, this));
-    
+
   last_time_ = this->now();
 
   RCLCPP_INFO(this->get_logger(), "FourWheelSteerController node has been initialized.");
@@ -70,26 +70,29 @@ void FourWheelSteerController::cmd_vel_callback(const geometry_msgs::msg::Twist:
   std::array<double, 4> steer_angles;
 
   for (size_t i = 0; i < 4; ++i) {
-    double vx = msg->linear.x * x_vel_scale_ + msg->angular.z * yaw_vel_scale_ * base_radius * std::cos(wheel_angles_[i]);
-    double vy = msg->linear.y * y_vel_scale_ + msg->angular.z * yaw_vel_scale_ * base_radius * std::sin(wheel_angles_[i]);
-    
+    double vx = msg->linear.x * x_vel_scale_ + msg->angular.z * yaw_vel_scale_ * base_radius *
+      std::cos(wheel_angles_[i]);
+    double vy = msg->linear.y * y_vel_scale_ + msg->angular.z * yaw_vel_scale_ * base_radius *
+      std::sin(wheel_angles_[i]);
+
     drive_vels[i] = std::hypot(vx, vy) / wheel_radius_;
-    
+
     double steer_angle = std::atan2(vy, vx);
-    
+
     if (steer_angle > M_PI / 2) {
-        steer_angle -= M_PI;
-        drive_vels[i] *= -1.0;
+      steer_angle -= M_PI;
+      drive_vels[i] *= -1.0;
     }
     if (steer_angle < -M_PI / 2) {
-        steer_angle += M_PI;
-        drive_vels[i] *= -1.0;
-    } 
+      steer_angle += M_PI;
+      drive_vels[i] *= -1.0;
+    }
     steer_angles[i] = steer_angle;
   }
 
   drive_cmd.data = {drive_vels[0], drive_vels[1], drive_vels[2] * -1.0, drive_vels[3] * -1.0};
-  steer_cmd.data = {steer_angles[0], steer_angles[1] * -1.0, steer_angles[2] * -1.0, steer_angles[3]};
+  steer_cmd.data = {steer_angles[0], steer_angles[1] * -1.0, steer_angles[2] * -1.0,
+    steer_angles[3]};
 
   drive_cmd_pub_->publish(drive_cmd);
   steer_cmd_pub_->publish(steer_cmd);
@@ -138,7 +141,7 @@ void FourWheelSteerController::publish_odom()
   odom.pose.pose.position.y = odom_y_;
   odom.pose.pose.position.z = 0.0;
   odom.pose.pose.orientation = t.transform.rotation;
-  
+
   odom.twist.twist.linear.x = vx;
   odom.twist.twist.linear.y = vy;
   odom.twist.twist.angular.z = vth;

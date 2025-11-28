@@ -11,6 +11,7 @@ class DriveManualController : public BaseManualController
 public:
   explicit DriveManualController(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   ~DriveManualController() override = default;
+
 private:
   void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg) override;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_publisher_;
