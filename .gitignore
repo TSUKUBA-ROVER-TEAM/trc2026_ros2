@@ -2,6 +2,7 @@ build/
 install/
 log/
 dep/
+src/
 .vscode/
 
 .DS_Store

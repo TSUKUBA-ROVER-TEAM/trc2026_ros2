@@ -3,7 +3,7 @@
 
 <xacro:include filename="$(find trc2026_description)/urdf/materials.xacro" />
 <xacro:include filename="$(find trc2026_description)/urdf/trc2026.trans" />
-<xacro:include filename="$(find trc2026_description)/urdf/trc2026.gazebo" />
+<xacro:include filename="$(find trc2026_description)/urdf/trc2026_ros2_control.xacro" />
 
 <link name="base_footprint"/>
 <joint name="base_link_joint" type="fixed">

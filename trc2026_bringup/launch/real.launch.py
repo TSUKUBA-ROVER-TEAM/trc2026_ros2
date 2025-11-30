@@ -13,17 +13,13 @@
 # limitations under the License.
 
 import os
-import tempfile
 
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import (
-    AppendEnvironmentVariable,
     DeclareLaunchArgument,
     ExecuteProcess,
-    IncludeLaunchDescription,
-    OpaqueFunction,
     RegisterEventHandler,
 )
 from launch.conditions import IfCondition, UnlessCondition
@@ -31,13 +27,17 @@ from launch.event_handlers import OnShutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command
 from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.event_handlers import OnProcessExit
+
 
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
     bringup_dir = get_package_share_directory('trc2026_navigation')
+    controller_dir = 'trc2026_control'
     # Get the launch directory
+    sim_dir = get_package_share_directory('trc2026_gazebo')
     desc_dir = get_package_share_directory('trc2026_description')
 
     # Create the launch configuration variables
@@ -45,22 +45,17 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
 
     # Create the launch configuration variables
-    slam = LaunchConfiguration('slam')
     namespace = LaunchConfiguration('namespace')
-    use_namespace = LaunchConfiguration('use_namespace')
-    map_yaml_file = LaunchConfiguration('map')
     use_sim_time = LaunchConfiguration('use_sim_time')
-    params_file = LaunchConfiguration('params_file')
-    autostart = LaunchConfiguration('autostart')
-    use_composition = LaunchConfiguration('use_composition')
-    use_respawn = LaunchConfiguration('use_respawn')
+
+    use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
+    robot_sdf = LaunchConfiguration('robot_sdf')
+
+    remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
     use_rviz = LaunchConfiguration('use_rviz')
-    use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
-    headless = LaunchConfiguration('headless')
-    robot_sdf = LaunchConfiguration('robot_sdf')
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
@@ -78,7 +73,7 @@ def generate_launch_description():
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
-        default_value='True',
+        default_value='False',
         description='Use simulation (Gazebo) clock if true',
     )
 
@@ -105,6 +100,15 @@ def generate_launch_description():
         description='Full path to the ROS2 parameters file to use for all launched nodes',
     )
 
+    declare_robot_name_cmd = DeclareLaunchArgument(
+        'robot_name', default_value='trc2026', description='name of the robot'
+    )
+    declare_robot_sdf_cmd = DeclareLaunchArgument(
+        'robot_sdf',
+        default_value=os.path.join(desc_dir, 'urdf', 'trc2026.xacro'),
+        description='Full path to robot sdf file to spawn the robot in gazebo',
+    )
+
     declare_autostart_cmd = DeclareLaunchArgument(
         'autostart',
         default_value='true',
@@ -125,7 +129,8 @@ def generate_launch_description():
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config_file',
-        default_value=os.path.join('trc2026_bringup', 'rviz', 'nav2_view.rviz'),
+        default_value=os.path.join(
+            'trc2026_description', 'config', 'display.rviz'),
         description='Full path to the RVIZ config file to use',
     )
 
@@ -151,6 +156,12 @@ def generate_launch_description():
         'headless', default_value='False', description='Whether to execute gzclient)'
     )
 
+    declare_world_cmd = DeclareLaunchArgument(
+        'world',
+        default_value=os.path.join(sim_dir, 'worlds', 'empty.sdf'),
+        description='Full path to world model file to load',
+    )
+
     declare_robot_name_cmd = DeclareLaunchArgument(
         'robot_name', default_value='trc2026', description='name of the robot'
     )
@@ -161,70 +172,32 @@ def generate_launch_description():
         description='Full path to robot sdf file to spawn the robot in gazebo',
     )
 
-    start_robot_state_publisher_cmd = Node(
-        condition=IfCondition(use_robot_state_pub),
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        name='robot_state_publisher',
+    four_wheel_steer_controller_node = Node(
+        package=controller_dir,
+        executable='four_wheel_steer_controller_node',
+        name='four_wheel_steer_controller',
         namespace=namespace,
-        output='screen',
-        parameters=[
-            {'use_sim_time': use_sim_time,
-             'robot_description': Command(['xacro', ' ', robot_sdf])}
-        ],
-        remappings=remappings,
-    )
-
-    joint_state_publisher_cmd = Node(
-        condition=IfCondition(headless),
-        package='joint_state_publisher',
-        executable='joint_state_publisher',
-        name='joint_state_publisher'
-    )
-
-    joint_state_publisher_gui_cmd = Node(
-        condition=UnlessCondition(headless),
-        package='joint_state_publisher_gui',
-        executable='joint_state_publisher_gui',
-        name='joint_state_publisher_gui'
-    )
-
-    rviz_cmd = Node(
-        condition=IfCondition(use_rviz),
-        package='rviz2',
-        executable='rviz2',
-        name='rviz2',
-        output='screen',
-        arguments=['-d', rviz_config_file],
         parameters=[{'use_sim_time': use_sim_time}],
-        remappings=remappings,
-    )
-
-    bringup_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(
-            bringup_dir, 'launch', 'bringup_launch.py')),
-        launch_arguments={
-            'namespace': namespace,
-            'use_namespace': use_namespace,
-            'slam': slam,
-            'map': map_yaml_file,
-            'use_sim_time': use_sim_time,
-            'params_file': params_file,
-            'autostart': autostart,
-            'use_composition': use_composition,
-            'use_respawn': use_respawn,
-        }.items(),
-    )
-
-    manual_control_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(
-            'trc2026_manual', 'launch', 'manual.launch.py')))
-
-    odom_to_tf_broadcaster_cmd = Node(
-        package='trc2026_interface',    
-        executable='odom_to_tf_node',
-        name='odom_to_tf_node',
         output='screen',
+    )
+
+    micro_ros_bridge_cmd = Node(
+        package='micro_ros_agent',
+        executable='micro_ros_agent',
+        name='micro_ros_agent',
+        output='screen',
+        arguments=['serial', '--dev', '/dev/ttyACM0', '--baud', '115200'],
+    )
+
+    manual_control_cmd = Node(
+        package='trc2026_manual',
+        executable='drive_manual_controller_node',
+        output='screen'
+    )
+    joy_node = Node(
+        package='joy',
+        executable='joy_node',
+        output='screen'
     )
 
     # Create the launch description and populate
@@ -246,16 +219,14 @@ def generate_launch_description():
     ld.add_action(declare_use_simulator_cmd)
     ld.add_action(declare_use_robot_state_pub_cmd)
     ld.add_action(declare_simulator_cmd)
+    ld.add_action(declare_world_cmd)
     ld.add_action(declare_robot_name_cmd)
     ld.add_action(declare_robot_sdf_cmd)
 
-    # Add the actions to launch all of the navigation nodes
-    ld.add_action(start_robot_state_publisher_cmd)
-    ld.add_action(rviz_cmd)
-    ld.add_action(joint_state_publisher_gui_cmd)
-    ld.add_action(joint_state_publisher_cmd)
-    ld.add_action(bringup_cmd)
-    ld.add_action(odom_to_tf_broadcaster_cmd)
+    ld.add_action(four_wheel_steer_controller_node)
+    ld.add_action(micro_ros_bridge_cmd)
+
     ld.add_action(manual_control_cmd)
+    ld.add_action(joy_node)
 
     return ld

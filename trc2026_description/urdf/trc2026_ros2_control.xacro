@@ -1,0 +1,50 @@
+<?xml version="1.0" ?>
+<robot name="trc2026" xmlns:xacro="http://www.ros.org/wiki/xacro" >
+
+<ros2_control name="RobotSystem" type="system">
+  <hardware>
+    <plugin>mock_components/GenericSystem</plugin>
+  </hardware>
+  <joint name="drive_left_forward_joint">
+    <command_interface name="velocity">velocity</command_interface>
+    <state_interface name="position">position</state_interface>
+    <state_interface name="velocity">velocity</state_interface>
+  </joint>
+  <joint name="drive_right_forward_joint">
+    <command_interface name="velocity">velocity</command_interface>
+    <state_interface name="position">position</state_interface>
+    <state_interface name="velocity">velocity</state_interface>
+  </joint>
+  <joint name="drive_left_backward_joint">
+    <command_interface name="velocity">velocity</command_interface>
+    <state_interface name="position">position</state_interface>
+    <state_interface name="velocity">velocity</state_interface>
+  </joint>
+  <joint name="drive_right_backward_joint">
+    <command_interface name="velocity">velocity</command_interface>
+    <state_interface name="position">position</state_interface>
+    <state_interface name="velocity">velocity</state_interface>
+  </joint>
+  <joint name="steer_left_forward_joint">
+    <command_interface name="position">position</command_interface>
+    <state_interface name="position">position</state_interface>
+    <state_interface name="velocity">velocity</state_interface>
+  </joint>
+  <joint name="steer_right_forward_joint">
+    <command_interface name="position">position</command_interface>
+    <state_interface name="position">position</state_interface>
+    <state_interface name="velocity">velocity</state_interface>
+  </joint>
+  <joint name="steer_left_backward_joint">
+    <command_interface name="position">position</command_interface>
+    <state_interface name="position">position</state_interface>
+    <state_interface name="velocity">velocity</state_interface>
+  </joint>
+  <joint name="steer_right_backward_joint">
+    <command_interface name="position">position</command_interface>
+    <state_interface name="position">position</state_interface>
+    <state_interface name="velocity">velocity</state_interface>
+  </joint>
+</ros2_control>
+
+</robot>
