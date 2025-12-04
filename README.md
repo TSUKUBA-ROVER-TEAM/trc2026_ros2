@@ -39,10 +39,11 @@ just clean
 ```
 ### パッケージ一覧
 ##### micro_ros_agent : micro-ROS通信インターフェース用パッケージ
-##### trc2026_bringup : ロボット起動用パッケージ
-##### trc2026_control : ロボット制御用パッケージ    
-- [four_wheel_steer_controller_node](trc2026_control/docs/four_wheel_steer_controller.md) : 4輪ステアリング制御ノード
-##### trc2026_manual : 手動コントロール用パッケージ
-- [drive_manual_controller_node](trc2026_manual/docs/drive_manual_controller.md) : 手動コントロールノード
-##### trc2026_description : ロボットのURDFモデル、RViz表示
-##### trc2026_gazebo : Gazeboシミュレーション用パッケージ
+##### [trc2026_bringup](docs/bringup/index.md) : ロボット起動用パッケージ
+##### [trc2026_control](docs/control/index.md) : ロボット制御用パッケージ    
+- [four_wheel_steer_controller_node](docs/control/four_wheel_steer_controller.md) : 4輪ステアリング制御ノード
+##### [trc2026_manual](docs/manual/index.md) : 手動コントロール用パッケージ
+- [drive_manual_controller_node](docs/manual/drive_manual_controller.md) : 手動コントロールノード
+##### [trc2026_navigation](docs/navigation/index.md) : 自律移動用パッケージ
+##### [trc2026_description](docs/description/index.md) : ロボットのURDFモデル、RViz表示
+##### [trc2026_gazebo](docs/gazebo/index.md) : Gazeboシミュレーション用パッケージ
