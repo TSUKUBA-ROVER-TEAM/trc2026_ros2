@@ -1,5 +1,5 @@
-from setuptools import setup
 import os
+from setuptools import setup
 from glob import glob
 
 package_name = 'trc2026_description'

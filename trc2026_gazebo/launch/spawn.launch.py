@@ -13,7 +13,7 @@ from launch.actions import (
     RegisterEventHandler,
 )
 from launch.conditions import IfCondition, UnlessCondition
-from launch.event_handlers import OnShutdown, OnProcessExit
+from launch.event_handlers import OnProcessExit, OnShutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration
 
@@ -23,7 +23,7 @@ from launch_ros.actions import Node
 def generate_launch_description():
     sim_pkg_name = 'trc2026_gazebo'
     desc_pkg_name = 'trc2026_description'
-    
+
     sim_dir = get_package_share_directory(sim_pkg_name)
     desc_dir = get_package_share_directory(desc_pkg_name)
     ros_gz_sim_dir = get_package_share_directory('ros_gz_sim')
@@ -177,7 +177,7 @@ def generate_launch_description():
         'GZ_SIM_RESOURCE_PATH',
         os.path.join(sim_dir, 'worlds') + ':' + os.path.join(sim_dir, 'models')
     )
-    
+
     spawn_robot_node = Node(
         condition=IfCondition(use_simulator),
         package='ros_gz_sim',
@@ -191,7 +191,7 @@ def generate_launch_description():
             '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']],
         parameters=[{'use_sim_time': use_sim_time}]
     )
-    
+
     load_joint_state_controller = ExecuteProcess(
         cmd=['ros2', 'control', 'load_controller',
              '--set-state', 'active', 'joint_state_broadcaster'],
@@ -216,7 +216,7 @@ def generate_launch_description():
             on_exit=[load_joint_state_controller],
         )
     )
-    
+
     joint_state_controller_event_handler = RegisterEventHandler(
         event_handler=OnProcessExit(
             target_action=load_joint_state_controller,
@@ -244,7 +244,7 @@ def generate_launch_description():
 
     ld.add_action(gazebo_server)
     ld.add_action(gazebo_client)
-    
+
     ld.add_action(start_robot_state_publisher_cmd)
     ld.add_action(spawn_robot_node)
 
@@ -256,6 +256,5 @@ def generate_launch_description():
 
     ld.add_action(robot_spawn_event_handler)
     ld.add_action(joint_state_controller_event_handler)
-    
 
     return ld

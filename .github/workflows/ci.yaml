@@ -23,7 +23,7 @@ jobs:
         run: |
           sudo apt update
           rosdep update
-          rosdep install --from-paths . --ignore-src -r -y
+          rosdep install --from-paths . --ignore-src -r -y --rosdistro jazzy
 
       - name: Build with colcon
         run: |
