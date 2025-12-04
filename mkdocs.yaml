@@ -23,7 +23,7 @@ docs_dir: docs
 site_dir: site
 
 nav: # サイトのナビゲーション構造を定義します
-  - Home: index.md             # 'docs/index.md' がサイトのトップページ
+  - Home: index.md            # 'docs/index.md' がサイトのトップページ
   - Control: control/index.md # rosdoc2 が生成する 'trc2026_control' のドキュメントへのリンク
   - Navigation: navigation/index.md # rosdoc2 が生成する 'trc2026_navigation' のドキュメントへのリンク
   - Manual: manual/index.md # rosdoc2 が生成する 'trc2026_manual' のドキュメントへのリンク
