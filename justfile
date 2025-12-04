@@ -8,8 +8,7 @@ default:
 alias dep := deps
 alias b := build
 alias t := test
-alias d := doc
-
+alias c := clean
 _cd:
   @cd {{justfile_directory()}}
 
@@ -29,12 +28,6 @@ build: _cd
 test: _cd
   source install/setup.bash && \
   colcon test --event-handlers console_direct+ --return-code-on-test-failure
-
-# generate documentation
-doc packages: _cd
-  source install/setup.bash && \
-  colcon list --paths-only | grep -E "($(echo {{packages}} | tr ' ' '|'))$" | xargs -I{} rosdoc2 build -p {}
-
 
 # clean workspace
 clean: _cd

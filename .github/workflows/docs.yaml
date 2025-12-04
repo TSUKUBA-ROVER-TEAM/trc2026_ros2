@@ -1,0 +1,33 @@
+name: Deploy Docs to GitHub Pages
+
+on:
+  push:
+    branches:
+      - feature/2-rosdoc2
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  deploy_docs:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip' 
+
+      - name: Install Documentation Tools
+        run: |
+          pip install mkdocs mkdocs-material --break-system-packages
+          
+      - name: Deploy to GitHub Pages
+        run: mkdocs gh-deploy --force
