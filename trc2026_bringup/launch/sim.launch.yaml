@@ -1,0 +1,145 @@
+launch:
+
+  - arg:
+        name: "namespace"
+        default: ""
+        description: "Top-level namespace"
+
+  - arg:
+        name: "use_sim_time"
+        default: "True"
+        description: "Use simulation (Gazebo) clock if true"
+
+  - arg:
+        name: "use_namespace"
+        default: "false"
+        description: "Whether to apply a namespace to the navigation stack"
+
+  - arg:
+        name: "slam"
+        default: "True"
+        description: "Whether run a SLAM"
+
+  - arg:
+        name: "map"
+        default: "$(find-pkg-share trc2026_navigation)/maps/depot.yaml"
+        description: "Full path to map file to load"
+
+  - arg:
+        name: "params_file"
+        default: "$(find-pkg-share trc2026_navigation)/params/nav2_params.yaml"
+        description: "Full path to the ROS2 parameters file to use for all launched nodes"
+
+  - arg:
+        name: "autostart"
+        default: "true"
+        description: "Automatically startup the nav2 stack"
+
+  - arg:
+        name: "use_composition"
+        default: "True"
+        description: "Whether to use composed bringup"
+
+  - arg:
+        name: "use_respawn"
+        default: "False"
+        description: "Whether to respawn if a node crashes. Applied when composition is disabled."
+
+  - arg:
+        name: "rviz_config_file"
+        default: "$(find-pkg-share trc2026_bringup)/rviz/nav2_view.rviz"
+        description: "Full path to the RVIZ config file to use"
+
+  - arg:
+        name: "use_rviz"
+        default: "True"
+        description: "Whether to start rviz"
+
+  - arg:
+        name: "use_simulator"
+        default: "True"
+        description: "Whether to start the simulator"
+
+  - arg:
+        name: "use_robot_state_pub"
+        default: "True"
+        description: "Whether to start the robot state publisher"
+
+  - arg:
+        name: "headless"
+        default: "False"
+        description: "Whether to execute gzclient"
+
+  - arg:
+        name: "world"
+        default: "$(find-pkg-share trc2026_gazebo)/worlds/empty.sdf"
+        description: "Full path to world model file to load"
+
+  - arg:
+        name: "robot_name"
+        default: "trc2026"
+        description: "name of the robot"
+
+  - arg:
+        name: "robot_sdf"
+        default: "$(find-pkg-share trc2026_description)/urdf/trc2026.xacro"
+        description: "Full path to robot sdf file to spawn the robot in gazebo"
+
+  - include:
+        file: "$(find-pkg-share trc2026_gazebo)/launch/spawn.launch.py"
+        arg:
+          - { name: "namespace", value: "$(var namespace)" }
+          - { name: "use_namespace", value: "$(var use_namespace)" }
+          - { name: "use_sim_time", value: "$(var use_sim_time)" }
+          - { name: "headless", value: "$(var headless)" }
+          - { name: "world", value: "$(var world)" }
+          - { name: "robot_name", value: "$(var robot_name)" }
+          - { name: "robot_sdf", value: "$(var robot_sdf)" }
+          - { name: "use_simulator", value: "$(var use_simulator)" }
+
+  - node:
+        pkg: "trc2026_control"
+        exec: "four_wheel_steer_controller_node"
+        name: "four_wheel_steer_controller"
+        namespace: "$(var namespace)"
+        output: "screen"
+        param:
+          - { name: "use_sim_time", value: "$(var use_sim_time)" }
+
+  - include:
+        file: "$(find-pkg-share trc2026_navigation)/launch/bringup_launch.py"
+        arg:
+          - { name: "namespace", value: "$(var namespace)" }
+          - { name: "use_namespace", value: "$(var use_namespace)" }
+          - { name: "slam", value: "$(var slam)" }
+          - { name: "map", value: "$(var map)" }
+          - { name: "use_sim_time", value: "$(var use_sim_time)" }
+          - { name: "params_file", value: "$(var params_file)" }
+          - { name: "autostart", value: "$(var autostart)" }
+          - { name: "use_composition", value: "$(var use_composition)" }
+          - { name: "use_respawn", value: "$(var use_respawn)" }
+
+  - node:
+        if: "$(var use_rviz)"
+        pkg: "rviz2"
+        exec: "rviz2"
+        name: "rviz2"
+        output: "screen"
+        args: "-d $(var rviz_config_file)"
+        param:
+          - { name: "use_sim_time", value: "$(var use_sim_time)" }
+        remap:
+          - { from: "/tf", to: "tf" }
+          - { from: "/tf_static", to: "tf_static" }
+
+  - node:
+        pkg: "trc2026_manual"
+        exec: "drive_manual_controller_node"
+        name: "drive_manual_controller"
+        output: "screen"
+
+  - node:
+        pkg: "joy"
+        exec: "joy_node"
+        name: "joy_node"
+        output: "screen"

@@ -9,11 +9,24 @@ namespace trc2026_manual
 class DriveManualController : public BaseManualController
 {
 public:
+  /*
+    * @brief コンストラクタ
+  */
   explicit DriveManualController(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+
+  /*
+    * @brief デストラクタ
+  */
   ~DriveManualController() override = default;
 
 private:
+  /*
+    * @brief ジョイスティックコールバック関数
+    * @param msg 受信したジョイスティックメッセージ
+  */
   void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg) override;
+
+  // パブリッシャ
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_publisher_;
 };
 

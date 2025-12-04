@@ -15,19 +15,40 @@ namespace trc2026_control
 class FourWheelSteerController : public rclcpp::Node
 {
 public:
+  /*
+    * @brief コンストラクタ
+  */
   FourWheelSteerController(const rclcpp::NodeOptions & options);
+
+  /*
+    * @brief デストラクタ
+  */
   ~FourWheelSteerController();
 
 private:
+  /*
+    * @brief cmd_velコールバック関数
+    ＊@param msg 受信したcmd_velメッセージ
+  */
   void cmd_vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg);
+
+  /*
+    * @brief オドメトリ情報を配信する関数
+  */
   void publish_odom();
 
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
+  // パブリッシャ
   rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr drive_cmd_pub_;
   rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr steer_cmd_pub_;
-
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
+
+  // サブスクライバ
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
+
+  // TFブロードキャスタ
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+  
+  // オドメトリ配信タイマー
   rclcpp::TimerBase::SharedPtr odom_timer_;
 
   std::array<double, 4> wheel_angles_;

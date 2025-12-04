@@ -12,9 +12,9 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   this->declare_parameter<double>("base_length", 0.8);
   this->declare_parameter<double>("wheel_radius", 0.105);
 
-  this->declare_parameter<double>("x_vel_scale", 2.0);
-  this->declare_parameter<double>("y_vel_scale", 2.0);
-  this->declare_parameter<double>("yaw_vel_scale", 1.5);
+  this->declare_parameter<double>("x_vel_scale", 1.0);
+  this->declare_parameter<double>("y_vel_scale", 1.0);
+  this->declare_parameter<double>("yaw_vel_scale", 1.0);
 
   this->get_parameter("base_width", base_width_);
   this->get_parameter("base_length", base_length_);

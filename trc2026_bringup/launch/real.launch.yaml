@@ -1,0 +1,23 @@
+launch:
+  - node:
+      pkg: "trc2026_control"
+      exec: "four_wheel_steer_controller_node"
+      name: "four_wheel_steer_controller"
+      output: "screen"
+
+  - node:
+      pkg: "micro_ros_agent"
+      exec: "micro_ros_agent"
+      name: "micro_ros_agent"
+      output: "screen"
+      args: "serial --dev /dev/ttyACM0 --baud 115200"
+
+  - node:
+      pkg: "trc2026_manual"
+      exec: "drive_manual_controller_node"
+      output: "screen"
+
+  - node:
+      pkg: "joy"
+      exec: "joy_node"
+      output: "screen"

@@ -1,0 +1,13 @@
+launch:
+
+  - node:
+        pkg: trc2026_manual
+        exec: manual_controller_node
+        name: manual_controller_node
+        output: screen
+
+  - node:
+        pkg: joy
+        exec: joy_node
+        name: joy_node
+        output: screen
