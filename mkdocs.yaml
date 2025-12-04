@@ -19,16 +19,17 @@ theme:
     - content.tabs.link
   language: ja # 日本語を指定
 
-docs_dir: ./
+docs_dir: ./docs
+site_dir: ./site
 
 nav: # サイトのナビゲーション構造を定義します
   - Home: README.md             # 'docs/index.md' がサイトのトップページ
-  - Control: trc2026_control/docs/index.md # rosdoc2 が生成する 'trc2026_control' のドキュメントへのリンク
-  - Navigation: trc2026_navigation/docs/index.md # rosdoc2 が生成する 'trc2026_navigation' のドキュメントへのリンク
-  - Manual: trc2026_manual/docs/index.md # rosdoc2 が生成する 'trc2026_manual' のドキュメントへのリンク
-  - Bringup: trc2026_bringup/docs/index.md # rosdoc2 が生成する 'trc2026_bringup' のドキュメントへのリンク
-  - Description: trc2026_description/docs/index.md # rosdoc2 が生成する 'trc2026_description' のドキュメントへのリンク
-  - Gazebo: trc2026_gazebo/docs/index.md # rosdoc2 が生成する 'trc2026_gazebo' のドキュメントへのリンク
+  - Control: docs/control/index.md # rosdoc2 が生成する 'trc2026_control' のドキュメントへのリンク
+  - Navigation: docs/navigation/index.md # rosdoc2 が生成する 'trc2026_navigation' のドキュメントへのリンク
+  - Manual: docs/manual/index.md # rosdoc2 が生成する 'trc2026_manual' のドキュメントへのリンク
+  - Bringup: docs/bringup/index.md # rosdoc2 が生成する 'trc2026_bringup' のドキュメントへのリンク
+  - Description: docs/description/index.md # rosdoc2 が生成する 'trc2026_description' のドキュメントへのリンク
+  - Gazebo: docs/gazebo/index.md # rosdoc2 が生成する 'trc2026_gazebo' のドキュメントへのリンク
 
 plugins:
   - search # サイト内検索機能を有効化
