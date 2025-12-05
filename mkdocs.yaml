@@ -1,0 +1,35 @@
+# docs/mkdocs.yaml
+site_name: TRC2026 Documentation # ドキュメントサイトのタイトル
+site_url: https://TSUKUBA-ROVER-TEAM.github.io/trc2026_ros2/ # GitHub Pages のデプロイ先URL
+repo_url: https://github.com/TSUKUBA-ROVER-TEAM/trc2026_ros2/ # GitHubリポジトリURL
+
+theme:
+  name: material # 使用するテーマ
+  features:
+    - navigation.expand
+    - navigation.indexes
+    - navigation.instant
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+  language: ja # 日本語を指定
+
+docs_dir: docs
+site_dir: site
+
+nav: # サイトのナビゲーション構造を定義します
+  - Home: index.md            # 'docs/index.md' がサイトのトップページ
+  - Control: control/index.md # rosdoc2 が生成する 'trc2026_control' のドキュメントへのリンク
+  - Navigation: navigation/index.md # rosdoc2 が生成する 'trc2026_navigation' のドキュメントへのリンク
+  - Manual: manual/index.md # rosdoc2 が生成する 'trc2026_manual' のドキュメントへのリンク
+  - Bringup: bringup/index.md # rosdoc2 が生成する 'trc2026_bringup' のドキュメントへのリンク
+  - Description: description/index.md # rosdoc2 が生成する 'trc2026_description' のドキュメントへのリンク
+  - Gazebo: gazebo/index.md # rosdoc2 が生成する 'trc2026_gazebo' のドキュメントへのリンク
+
+plugins:
+  - search # サイト内検索機能を有効化

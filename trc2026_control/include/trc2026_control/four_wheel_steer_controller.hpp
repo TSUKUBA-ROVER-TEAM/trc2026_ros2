@@ -2,10 +2,10 @@
 #define TRC2026_CONTROL_FOUR_WHEEL_STEER_CONTROLLER_HPP
 
 #include "rclcpp/rclcpp.hpp"
+#include "tf2_ros/transform_broadcaster.h"
 
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "tf2_ros/transform_broadcaster.h"
 #include "std_msgs/msg/float64_multi_array.hpp"
 
 #include <cmath>
@@ -16,13 +16,13 @@ class FourWheelSteerController : public rclcpp::Node
 {
 public:
   /*
-    * @brief コンストラクタ
-  */
+   * @brief コンストラクタ
+   */
   FourWheelSteerController(const rclcpp::NodeOptions & options);
 
   /*
-    * @brief デストラクタ
-  */
+   * @brief デストラクタ
+   */
   ~FourWheelSteerController();
 
 private:
@@ -33,8 +33,8 @@ private:
   void cmd_vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg);
 
   /*
-    * @brief オドメトリ情報を配信する関数
-  */
+   * @brief オドメトリ情報を配信する関数
+   */
   void publish_odom();
 
   // パブリッシャ
@@ -47,7 +47,7 @@ private:
 
   // TFブロードキャスタ
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-  
+
   // オドメトリ配信タイマー
   rclcpp::TimerBase::SharedPtr odom_timer_;
 

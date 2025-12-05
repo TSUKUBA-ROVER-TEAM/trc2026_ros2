@@ -2,6 +2,7 @@
 #define TRC2026_MANUAL_R2_MANUAL_CONTROLLER_HPP
 
 #include "trc2026_manual/base_manual_controller.hpp"
+
 #include "geometry_msgs/msg/twist.hpp"
 
 namespace trc2026_manual
@@ -10,20 +11,20 @@ class DriveManualController : public BaseManualController
 {
 public:
   /*
-    * @brief コンストラクタ
-  */
+   * @brief コンストラクタ
+   */
   explicit DriveManualController(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
   /*
-    * @brief デストラクタ
-  */
+   * @brief デストラクタ
+   */
   ~DriveManualController() override = default;
 
 private:
   /*
-    * @brief ジョイスティックコールバック関数
-    * @param msg 受信したジョイスティックメッセージ
-  */
+   * @brief ジョイスティックコールバック関数
+   * @param msg 受信したジョイスティックメッセージ
+   */
   void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg) override;
 
   // パブリッシャ

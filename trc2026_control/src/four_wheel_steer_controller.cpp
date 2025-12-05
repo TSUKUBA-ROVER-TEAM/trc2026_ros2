@@ -1,7 +1,10 @@
 #include "trc2026_control/four_wheel_steer_controller.hpp"
-#include <array>
-#include <tf2/LinearMath/Quaternion.h>
+
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+
+#include <tf2/LinearMath/Quaternion.h>
+
+#include <array>
 
 namespace trc2026_control
 {
@@ -42,8 +45,8 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
 
   auto odom_period = std::chrono::milliseconds(20);
-  odom_timer_ = this->create_wall_timer(
-    odom_period, std::bind(&FourWheelSteerController::publish_odom, this));
+  odom_timer_ =
+    this->create_wall_timer(odom_period, std::bind(&FourWheelSteerController::publish_odom, this));
 
   last_time_ = this->now();
 
@@ -70,10 +73,10 @@ void FourWheelSteerController::cmd_vel_callback(const geometry_msgs::msg::Twist:
   std::array<double, 4> steer_angles;
 
   for (size_t i = 0; i < 4; ++i) {
-    double vx = msg->linear.x * x_vel_scale_ + msg->angular.z * yaw_vel_scale_ * base_radius *
-      std::cos(wheel_angles_[i]);
-    double vy = msg->linear.y * y_vel_scale_ + msg->angular.z * yaw_vel_scale_ * base_radius *
-      std::sin(wheel_angles_[i]);
+    double vx = msg->linear.x * x_vel_scale_ +
+      msg->angular.z * yaw_vel_scale_ * base_radius * std::cos(wheel_angles_[i]);
+    double vy = msg->linear.y * y_vel_scale_ +
+      msg->angular.z * yaw_vel_scale_ * base_radius * std::sin(wheel_angles_[i]);
 
     drive_vels[i] = std::hypot(vx, vy) / wheel_radius_;
 
@@ -91,8 +94,8 @@ void FourWheelSteerController::cmd_vel_callback(const geometry_msgs::msg::Twist:
   }
 
   drive_cmd.data = {drive_vels[0], drive_vels[1], drive_vels[2] * -1.0, drive_vels[3] * -1.0};
-  steer_cmd.data = {steer_angles[0], steer_angles[1] * -1.0, steer_angles[2] * -1.0,
-    steer_angles[3]};
+  steer_cmd.data = {
+    steer_angles[0], steer_angles[1] * -1.0, steer_angles[2] * -1.0, steer_angles[3]};
 
   drive_cmd_pub_->publish(drive_cmd);
   steer_cmd_pub_->publish(steer_cmd);
@@ -150,7 +153,7 @@ void FourWheelSteerController::publish_odom()
 
   last_time_ = current_time;
 }
-}
+}  // namespace trc2026_control
 
 #include "rclcpp_components/register_node_macro.hpp"
 RCLCPP_COMPONENTS_REGISTER_NODE(trc2026_control::FourWheelSteerController)
