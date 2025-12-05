@@ -45,8 +45,7 @@ install(TARGETS drive_manual_controller
   RUNTIME DESTINATION bin
 )
 
-
-install(DIRECTORY 
+install(DIRECTORY
   launch
   DESTINATION share/${PROJECT_NAME}
 )
