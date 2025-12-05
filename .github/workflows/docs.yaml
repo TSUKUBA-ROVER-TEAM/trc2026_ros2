@@ -27,6 +27,5 @@ jobs:
       - name: Install Documentation Tools
         run: |
           pip install mkdocs mkdocs-material --break-system-packages
-          
       - name: Deploy to GitHub Pages
         run: mkdocs gh-deploy --force
