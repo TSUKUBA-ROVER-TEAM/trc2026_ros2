@@ -1,0 +1,50 @@
+{
+  "name": "ROS 2 Jazzy GUI Development Container",
+  "remoteUser": "vscode",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "args": {
+            "USERNAME": "vscode"
+        }
+    },
+  "runArgs": [
+    "--network=host",
+		"--cap-add=SYS_PTRACE",
+		"--security-opt=seccomp:unconfined",
+		"--security-opt=apparmor:unconfined",
+		"--volume=/tmp/.X11-unix:/tmp/.X11-unix",
+		"--volume=/mnt/wslg:/mnt/wslg",
+		"--ipc=host",
+    "--device=/dev/dri"
+  ],
+  "containerEnv": {
+    "TZ": "Asia/Tokyo",
+    "DISPLAY": "${localEnv:DISPLAY}", // Needed for GUI try ":0" for windows
+		"WAYLAND_DISPLAY": "${localEnv:WAYLAND_DISPLAY}",
+		"XDG_RUNTIME_DIR": "/home/vscode/.xdg-runtime",
+		"PULSE_SERVER": "${localEnv:PULSE_SERVER}"
+  },
+  "workspaceFolder": "/home/vscode/trc2026_ros2",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/trc2026_ros2,type=bind",
+  "postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools",
+        "ms-python.python",
+        "llvm-vs-code-extensions.vscode-clangd",
+        "skellock.just",
+        "cheshirekow.cmake-format",
+        "redhat.vscode-xml",
+        "redhat.vscode-yaml",
+        "esbenp.prettier-vscode",
+        "EditorConfig.EditorConfig",
+        "DavidAnson.vscode-markdownlint",
+        "twxs.cmake",
+        "eamodio.gitlens",
+        "mine.cpplint"
+      ]
+    }
+  }
+}
