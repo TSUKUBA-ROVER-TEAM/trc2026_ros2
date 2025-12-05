@@ -3,7 +3,7 @@ name: Deploy Docs to GitHub Pages
 on:
   push:
     branches:
-      - feature/2-rosdoc2
+      - main
   workflow_dispatch:
 
 permissions:
