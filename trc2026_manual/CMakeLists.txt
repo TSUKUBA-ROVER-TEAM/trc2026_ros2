@@ -6,43 +6,17 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # find dependencies
-find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(rclcpp_components REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(ament_cmake_auto REQUIRED)
 
-add_library(drive_manual_controller SHARED
+ament_auto_find_build_dependencies()
+
+ament_auto_add_library(drive_manual_controller SHARED
   src/drive_manual_controller.cpp
 )
-
-ament_target_dependencies(drive_manual_controller
-  rclcpp
-  geometry_msgs
-  sensor_msgs
-  rclcpp_components
-)
-
-target_include_directories(drive_manual_controller PUBLIC
-  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-)
-
-add_library(${PROJECT_NAME}::drive_manual_controller ALIAS drive_manual_controller)
 
 rclcpp_components_register_node(drive_manual_controller
   PLUGIN "trc2026_manual::DriveManualController"
   EXECUTABLE drive_manual_controller_node
-)
-
-install(TARGETS drive_manual_controller
-  DESTINATION lib
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY
@@ -62,4 +36,4 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_package()
+ament_auto_package()

@@ -9,7 +9,7 @@
 
   <depend>trc2026_description</depend>
   
-  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_python</buildtool_depend>
 
   <build_depend>launch_ros</build_depend>
 

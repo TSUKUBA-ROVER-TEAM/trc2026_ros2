@@ -6,6 +6,12 @@ launch:
       output: "screen"
 
   - node:
+      pkg: "trc2026_control"
+      exec: "led_controller_node"
+      name: "led_controller"
+      output: "screen"
+
+  - node:
       pkg: "micro_ros_agent"
       exec: "micro_ros_agent"
       name: "micro_ros_agent"

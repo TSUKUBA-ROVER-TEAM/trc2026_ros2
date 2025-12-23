@@ -6,51 +6,25 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # find dependencies
-find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(nav_msgs REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
-find_package(rclcpp_components REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(ament_cmake_auto REQUIRED)
+ament_auto_find_build_dependencies()
 
-add_library(four_wheel_steer_controller SHARED
-  src/four_wheel_steer_controller.cpp
+ament_auto_add_library(four_wheel_steer_controller SHARED
+  src/drive/four_wheel_steer_controller.cpp
 )
 
-ament_target_dependencies(four_wheel_steer_controller
-  rclcpp
-  geometry_msgs
-  std_msgs
-  nav_msgs
-  tf2
-  tf2_ros
-  tf2_geometry_msgs
-  rclcpp_components
+ament_auto_add_library(led_controller SHARED
+  src/led/led_controller.cpp
 )
-
-target_include_directories(four_wheel_steer_controller PUBLIC
-  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-)
-
-add_library(${PROJECT_NAME}::four_wheel_steer_controller ALIAS four_wheel_steer_controller)
 
 rclcpp_components_register_node(four_wheel_steer_controller
   PLUGIN "trc2026_control::FourWheelSteerController"
   EXECUTABLE four_wheel_steer_controller_node
 )
 
-install(TARGETS four_wheel_steer_controller
-  DESTINATION lib
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
+rclcpp_components_register_node(led_controller
+  PLUGIN "trc2026_control::LedController"
+  EXECUTABLE led_controller_node
 )
 
 if(BUILD_TESTING)
@@ -65,4 +39,4 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_package()
+ament_auto_package()
