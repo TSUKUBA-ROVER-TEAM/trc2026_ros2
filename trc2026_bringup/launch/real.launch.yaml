@@ -1,5 +1,14 @@
 launch:
   - node:
+      pkg: foxglove_bridge
+      exec: foxglove_bridge
+      name: foxglove_bridge
+      output: screen
+      remap:
+        - from: /joy
+          to: /joy_foxglove
+
+  - node:
       pkg: "trc2026_control"
       exec: "four_wheel_steer_controller_node"
       name: "four_wheel_steer_controller"
@@ -20,4 +29,13 @@ launch:
   - node:
       pkg: "joy"
       exec: "joy_node"
+      output: "screen"
+      remap:
+        - from: "joy"
+          to: "joy_physical"
+
+  - node:
+      pkg: "trc2026_manual"
+      exec: "joy_filter_node"
+      name: "joy_filter"
       output: "screen"

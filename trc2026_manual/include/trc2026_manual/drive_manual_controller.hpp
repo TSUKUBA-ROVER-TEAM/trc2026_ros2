@@ -29,6 +29,11 @@ private:
 
   // パブリッシャ
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_publisher_;
+
+  // ジョイスティック軸インデックス
+  int axis_linear_x_;
+  int axis_linear_y_;
+  int axis_angular_z_;
 };
 
 }  // namespace trc2026_manual
