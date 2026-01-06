@@ -6,7 +6,7 @@ DriveManualController::DriveManualController(const rclcpp::NodeOptions & options
 : BaseManualController("drive_manual_controller", options)
 {
   cmd_vel_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
-  
+
   this->declare_parameter("axis_linear_x", 4);
   this->declare_parameter("axis_linear_y", 3);
   this->declare_parameter("axis_angular_z", 0);

@@ -3,7 +3,8 @@
 namespace trc2026_manual
 {
 
-JoyFilter::JoyFilter(const rclcpp::NodeOptions & options) : Node("joy_filter", options)
+JoyFilter::JoyFilter(const rclcpp::NodeOptions & options)
+: Node("joy_filter", options)
 {
   this->declare_parameter("timeout_ms", 1000);
   timeout_ = std::chrono::milliseconds(this->get_parameter("timeout_ms").as_int());
@@ -25,7 +26,7 @@ void JoyFilter::primary_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
 
   auto filtered_msg = std::make_unique<sensor_msgs::msg::Joy>();
   filtered_msg->header = msg->header;
-  
+
   filtered_msg->axes.assign(8, 0.0);
   filtered_msg->buttons.assign(13, 0);
 
@@ -33,7 +34,7 @@ void JoyFilter::primary_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
     filtered_msg->axes[0] = msg->axes[0] * -1.0;
     filtered_msg->axes[1] = msg->axes[1];
     filtered_msg->axes[3] = msg->axes[2] * -1.0;
-    filtered_msg->axes[4] = msg->axes[3] * -1.0; 
+    filtered_msg->axes[4] = msg->axes[3] * -1.0;
   }
 
   pub_joy_->publish(std::move(filtered_msg));
@@ -47,7 +48,7 @@ void JoyFilter::secondary_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
   }
 }
 
-}
+}  // namespace trc2026_manual
 
 #include "rclcpp_components/register_node_macro.hpp"
 RCLCPP_COMPONENTS_REGISTER_NODE(trc2026_manual::JoyFilter)
