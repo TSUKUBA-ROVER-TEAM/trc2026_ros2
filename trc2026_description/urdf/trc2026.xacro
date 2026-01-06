@@ -21,14 +21,14 @@
   <visual>
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/base_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/base_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/base_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/base_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
@@ -42,14 +42,14 @@
   <visual>
     <origin xyz="-0.4 0.257 0.1587" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/wheel_right_forward_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/wheel_right_forward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="-0.4 0.257 0.1587" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/wheel_right_forward_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/wheel_right_forward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
@@ -63,14 +63,14 @@
   <visual>
     <origin xyz="-0.4 0.292 -0.0646" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/steer_right_forward_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/steer_right_forward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="-0.4 0.292 -0.0646" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/steer_right_forward_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/steer_right_forward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
@@ -84,14 +84,14 @@
   <visual>
     <origin xyz="0.4 0.257 0.1587" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/wheel_right_backward_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/wheel_right_backward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="0.4 0.257 0.1587" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/wheel_right_backward_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/wheel_right_backward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
@@ -105,14 +105,14 @@
   <visual>
     <origin xyz="0.4 0.292 -0.0646" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/steer_right_backward_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/steer_right_backward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="0.4 0.292 -0.0646" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/steer_right_backward_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/steer_right_backward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
@@ -126,14 +126,14 @@
   <visual>
     <origin xyz="0.0 0.036 -0.041" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/arm_right_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/arm_right_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="0.0 0.036 -0.041" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/arm_right_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/arm_right_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
@@ -147,14 +147,14 @@
   <visual>
     <origin xyz="-0.4 -0.257 0.1587" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/wheel_left_forward_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/wheel_left_forward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="-0.4 -0.257 0.1587" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/wheel_left_forward_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/wheel_left_forward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
@@ -168,14 +168,14 @@
   <visual>
     <origin xyz="-0.4 -0.292 -0.064" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/steer_left_forward_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/steer_left_forward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="-0.4 -0.292 -0.064" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/steer_left_forward_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/steer_left_forward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
@@ -189,14 +189,14 @@
   <visual>
     <origin xyz="0.4 -0.257 0.1587" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/wheel_left_backward_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/wheel_left_backward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="0.4 -0.257 0.1587" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/wheel_left_backward_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/wheel_left_backward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
@@ -210,14 +210,14 @@
   <visual>
     <origin xyz="0.4 -0.292 -0.064" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/steer_left_backward_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/steer_left_backward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="0.4 -0.292 -0.064" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/steer_left_backward_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/steer_left_backward_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
@@ -231,14 +231,14 @@
   <visual>
     <origin xyz="0.0 -0.036 -0.041" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/arm_left_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/arm_left_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="silver"/>
   </visual>
   <collision>
     <origin xyz="0.0 -0.036 -0.041" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="file://$(find trc2026_description)/meshes/arm_left_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://trc2026_description/meshes/arm_left_link.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>

@@ -6,6 +6,7 @@
 
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
 
 #include <cmath>
@@ -41,6 +42,7 @@ private:
   rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr drive_cmd_pub_;
   rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr steer_cmd_pub_;
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_pub_;
 
   // サブスクライバ
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
@@ -68,6 +70,10 @@ private:
   rclcpp::Time last_time_;
 
   geometry_msgs::msg::Twist current_cmd_vel_;
+
+  std::array<double, 4> wheel_positions_;
+  std::array<double, 4> current_drive_vels_;
+  std::array<double, 4> current_steer_angles_;
 };
 }  // namespace trc2026_control
 

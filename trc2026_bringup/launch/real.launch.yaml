@@ -10,6 +10,16 @@ launch:
       param:
         - name: "topic_whitelist"
           value: ["^/(?!image_raw$|image_raw/theora|image_raw/zstd).*$"]
+        - name: "asset_uri_allowlist"
+          value: ["^package://.*$"]
+
+  - node:
+      pkg: robot_state_publisher
+      exec: robot_state_publisher
+      name: robot_state_publisher
+      param:
+        - name: robot_description
+          value: $(command 'xacro $(find-pkg-share trc2026_description)/urdf/trc2026.xacro')
 
   - node:
       pkg: "trc2026_control"
