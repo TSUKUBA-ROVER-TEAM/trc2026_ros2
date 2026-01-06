@@ -81,9 +81,9 @@ void FourWheelSteerController::cmd_vel_callback(const geometry_msgs::msg::Twist:
 
   for (size_t i = 0; i < 4; ++i) {
     double vx = msg->linear.x * x_vel_scale_ +
-                msg->angular.z * yaw_vel_scale_ * base_radius * std::cos(wheel_angles_[i]);
+      msg->angular.z * yaw_vel_scale_ * base_radius * std::cos(wheel_angles_[i]);
     double vy = msg->linear.y * y_vel_scale_ +
-                msg->angular.z * yaw_vel_scale_ * base_radius * std::sin(wheel_angles_[i]);
+      msg->angular.z * yaw_vel_scale_ * base_radius * std::sin(wheel_angles_[i]);
 
     drive_vels[i] = std::hypot(vx, vy) / wheel_radius_;
 
@@ -162,9 +162,9 @@ void FourWheelSteerController::publish_odom()
 
   sensor_msgs::msg::JointState js;
   js.header.stamp = current_time;
-  js.name = {"drive_left_forward_joint",   "drive_right_forward_joint", "drive_left_backward_joint",
-             "drive_right_backward_joint", "steer_left_forward_joint",  "steer_right_forward_joint",
-             "steer_left_backward_joint",  "steer_right_backward_joint"};
+  js.name = {"drive_left_forward_joint", "drive_right_forward_joint", "drive_left_backward_joint",
+    "drive_right_backward_joint", "steer_left_forward_joint", "steer_right_forward_joint",
+    "steer_left_backward_joint", "steer_right_backward_joint"};
 
   js.position.resize(8);
   js.velocity.resize(8);
