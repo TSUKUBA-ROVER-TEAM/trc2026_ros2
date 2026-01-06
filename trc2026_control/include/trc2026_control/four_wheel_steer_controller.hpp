@@ -63,6 +63,7 @@ private:
   double y_vel_scale_;
   double yaw_vel_scale_;
 
+  bool publish_joint_states_;
   double odom_x_;
   double odom_y_;
   double odom_yaw_;

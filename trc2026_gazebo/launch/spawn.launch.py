@@ -252,7 +252,7 @@ def generate_launch_description():
     ld.add_action(camera_bridge_image)
     ld.add_action(camera_bridge_depth)
 
-    ld.add_action(joint_state_publisher_cmd)
+    # ld.add_action(joint_state_publisher_cmd)
 
     ld.add_action(robot_spawn_event_handler)
     ld.add_action(joint_state_controller_event_handler)

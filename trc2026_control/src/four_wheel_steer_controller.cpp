@@ -22,6 +22,7 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   this->declare_parameter<double>("x_vel_scale", 1.0);
   this->declare_parameter<double>("y_vel_scale", 1.0);
   this->declare_parameter<double>("yaw_vel_scale", 1.0);
+  this->declare_parameter<bool>("publish_joint_states", true);
 
   this->get_parameter("base_width", base_width_);
   this->get_parameter("base_length", base_length_);
@@ -30,6 +31,7 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   this->get_parameter("x_vel_scale", x_vel_scale_);
   this->get_parameter("y_vel_scale", y_vel_scale_);
   this->get_parameter("yaw_vel_scale", yaw_vel_scale_);
+  this->get_parameter("publish_joint_states", publish_joint_states_);
 
   wheel_angles_[0] = std::atan2(base_length_ / 2.0, -base_width_ / 2.0);
   wheel_angles_[1] = std::atan2(base_length_ / 2.0, base_width_ / 2.0);
@@ -160,10 +162,9 @@ void FourWheelSteerController::publish_odom()
 
   sensor_msgs::msg::JointState js;
   js.header.stamp = current_time;
-  js.name = {"drive_left_forward_joint",  "drive_right_forward_joint",
-             "drive_left_backward_joint", "drive_right_backward_joint",
-             "steer_left_forward_joint",  "steer_right_forward_joint",
-             "steer_left_backward_joint", "steer_right_backward_joint"};
+  js.name = {"drive_left_forward_joint",   "drive_right_forward_joint", "drive_left_backward_joint",
+             "drive_right_backward_joint", "steer_left_forward_joint",  "steer_right_forward_joint",
+             "steer_left_backward_joint",  "steer_right_backward_joint"};
 
   js.position.resize(8);
   js.velocity.resize(8);
@@ -184,7 +185,9 @@ void FourWheelSteerController::publish_odom()
   js.position[5] *= -1.0;
   js.position[6] *= -1.0;
 
-  joint_state_pub_->publish(js);
+  if (publish_joint_states_) {
+    joint_state_pub_->publish(js);
+  }
 
   last_time_ = current_time;
 }
