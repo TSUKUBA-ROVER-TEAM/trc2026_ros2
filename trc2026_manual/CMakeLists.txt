@@ -64,11 +64,6 @@ install(TARGETS drive_manual_controller joy_filter
   RUNTIME DESTINATION bin
 )
 
-# joy_filter_node is installed by rclcpp_components_register_node automatically to bin,
-# but if it needs to be in lib/<pkg> we might need manual install or check where register_node puts it.
-# Usually EXECUTABLE argument puts it in lib/<pkg>.
-
-
 install(DIRECTORY
   launch
   DESTINATION share/${PROJECT_NAME}
