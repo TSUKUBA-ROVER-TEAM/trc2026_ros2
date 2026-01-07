@@ -96,13 +96,6 @@ def generate_launch_description():
         remappings=remappings,
     )
 
-    joint_state_publisher_cmd = Node(
-        package='joint_state_publisher',
-        executable='joint_state_publisher',
-        name='joint_state_publisher',
-        parameters=[{'use_sim_time': use_sim_time}]
-    )
-
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -251,8 +244,6 @@ def generate_launch_description():
     ld.add_action(bridge)
     ld.add_action(camera_bridge_image)
     ld.add_action(camera_bridge_depth)
-
-    ld.add_action(joint_state_publisher_cmd)
 
     ld.add_action(robot_spawn_event_handler)
     ld.add_action(joint_state_controller_event_handler)

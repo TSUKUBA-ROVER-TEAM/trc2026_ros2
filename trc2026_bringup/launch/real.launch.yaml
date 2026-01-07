@@ -1,5 +1,27 @@
 launch:
   - node:
+      pkg: foxglove_bridge
+      exec: foxglove_bridge
+      name: foxglove_bridge
+      output: screen
+      remap:
+        - from: /joy
+          to: /joy_foxglove
+      param:
+        - name: "topic_whitelist"
+          value: ["^/(?!image_raw$|image_raw/theora|image_raw/zstd).*$"]
+        - name: "asset_uri_allowlist"
+          value: ["^package://.*$"]
+
+  - node:
+      pkg: robot_state_publisher
+      exec: robot_state_publisher
+      name: robot_state_publisher
+      param:
+        - name: robot_description
+          value: $(command 'xacro $(find-pkg-share trc2026_description)/urdf/trc2026.xacro')
+
+  - node:
       pkg: "trc2026_control"
       exec: "four_wheel_steer_controller_node"
       name: "four_wheel_steer_controller"
@@ -21,3 +43,26 @@ launch:
       pkg: "joy"
       exec: "joy_node"
       output: "screen"
+      remap:
+        - from: "joy"
+          to: "joy_physical"
+
+  - node:
+      pkg: "trc2026_manual"
+      exec: "joy_filter_node"
+      name: "joy_filter"
+      output: "screen"
+
+  - node:
+      pkg: "v4l2_camera"
+      exec: "v4l2_camera_node"
+      name: "v4l2_camera"
+      param:
+        - name: "video_device"
+          value: "/dev/video0"
+        - name: "image_size"
+          value: [320, 240]
+        - name: "frame_id"
+          value: "camera_link"
+        - name: "pixel_format"
+          value: "YUYV"

@@ -11,6 +11,10 @@ namespace trc2026_control
 FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & options)
 : Node("four_wheel_steer_controller_node", options), odom_x_(0.0), odom_y_(0.0), odom_yaw_(0.0)
 {
+  wheel_positions_.fill(0.0);
+  current_drive_vels_.fill(0.0);
+  current_steer_angles_.fill(0.0);
+
   this->declare_parameter<double>("base_width", 0.584);
   this->declare_parameter<double>("base_length", 0.8);
   this->declare_parameter<double>("wheel_radius", 0.105);
@@ -18,6 +22,7 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   this->declare_parameter<double>("x_vel_scale", 1.0);
   this->declare_parameter<double>("y_vel_scale", 1.0);
   this->declare_parameter<double>("yaw_vel_scale", 1.0);
+  this->declare_parameter<bool>("publish_joint_states", true);
 
   this->get_parameter("base_width", base_width_);
   this->get_parameter("base_length", base_length_);
@@ -26,6 +31,7 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   this->get_parameter("x_vel_scale", x_vel_scale_);
   this->get_parameter("y_vel_scale", y_vel_scale_);
   this->get_parameter("yaw_vel_scale", yaw_vel_scale_);
+  this->get_parameter("publish_joint_states", publish_joint_states_);
 
   wheel_angles_[0] = std::atan2(base_length_ / 2.0, -base_width_ / 2.0);
   wheel_angles_[1] = std::atan2(base_length_ / 2.0, base_width_ / 2.0);
@@ -43,6 +49,7 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
 
   tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
   odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
+  joint_state_pub_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
 
   auto odom_period = std::chrono::milliseconds(20);
   odom_timer_ =
@@ -91,6 +98,8 @@ void FourWheelSteerController::cmd_vel_callback(const geometry_msgs::msg::Twist:
       drive_vels[i] *= -1.0;
     }
     steer_angles[i] = steer_angle;
+    current_drive_vels_[i] = drive_vels[i];
+    current_steer_angles_[i] = steer_angles[i];
   }
 
   drive_cmd.data = {drive_vels[0], drive_vels[1], drive_vels[2] * -1.0, drive_vels[3] * -1.0};
@@ -150,6 +159,35 @@ void FourWheelSteerController::publish_odom()
   odom.twist.twist.angular.z = vth;
 
   odom_pub_->publish(odom);
+
+  sensor_msgs::msg::JointState js;
+  js.header.stamp = current_time;
+  js.name = {"drive_left_forward_joint", "drive_right_forward_joint", "drive_left_backward_joint",
+    "drive_right_backward_joint", "steer_left_forward_joint", "steer_right_forward_joint",
+    "steer_left_backward_joint", "steer_right_backward_joint"};
+
+  js.position.resize(8);
+  js.velocity.resize(8);
+
+  for (size_t i = 0; i < 4; ++i) {
+    wheel_positions_[i] += current_drive_vels_[i] * dt;
+    js.position[i] = wheel_positions_[i];
+    js.velocity[i] = current_drive_vels_[i];
+    js.position[i + 4] = current_steer_angles_[i];
+    js.velocity[i + 4] = 0.0;
+  }
+
+  js.position[2] *= -1.0;
+  js.velocity[2] *= -1.0;
+  js.position[3] *= -1.0;
+  js.velocity[3] *= -1.0;
+
+  js.position[5] *= -1.0;
+  js.position[6] *= -1.0;
+
+  if (publish_joint_states_) {
+    joint_state_pub_->publish(js);
+  }
 
   last_time_ = current_time;
 }
