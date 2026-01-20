@@ -80,3 +80,20 @@ launch:
           value: "camera_link"
         - name: "pixel_format"
           value: "YUYV"
+
+  - node:
+      pkg: "nmea_navsat_driver"
+      exec: "nmea_serial_driver"
+      name: "nmea_serial_driver"
+      output: "screen"
+      param:
+        - name: "port"
+          value: "/dev/ttyACM1"
+        - name: "baud"
+          value: 9600
+        - name: "frame_id"
+          value: "gps"
+        - name: "time_ref_source"
+          value: "gps"
+        - name: "use_RMC"
+          value: false
