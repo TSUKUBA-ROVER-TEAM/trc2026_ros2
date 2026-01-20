@@ -45,12 +45,12 @@
   </actuator>
 </transmission>
 
-<transmission name="arm_right_joint_tran">
+<transmission name="leg_right_joint_tran">
   <type>transmission_interface/SimpleTransmission</type>
-  <joint name="arm_right_joint">
+  <joint name="leg_right_joint">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
   </joint>
-  <actuator name="arm_right_joint_actr">
+  <actuator name="leg_right_joint_actr">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     <mechanicalReduction>1</mechanicalReduction>
   </actuator>
@@ -100,12 +100,89 @@
   </actuator>
 </transmission>
 
-<transmission name="arm_left_joint_tran">
+<transmission name="leg_left_joint_tran">
   <type>transmission_interface/SimpleTransmission</type>
-  <joint name="arm_left_joint">
+  <joint name="leg_left_joint">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
   </joint>
-  <actuator name="arm_left_joint_actr">
+  <actuator name="leg_left_joint_actr">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<transmission name="hand_right_joint_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="hand_right_joint">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="hand_right_joint_actr">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<transmission name="hand_left_joint_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="hand_left_joint">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="hand_left_joint_actr">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<transmission name="arm_4_joint_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="arm_4_joint">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="arm_4_joint_actr">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<transmission name="arm_3_joint_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="arm_3_rotate_joint">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="arm_3_joint_actr">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<transmission name="arm_2_joint_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="arm_2_joint">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="arm_2_joint_actr">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<transmission name="arm_3_joint_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="arm_3_joint">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="arm_3_joint_actr">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<transmission name="arm_3_virtual_joint_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="arm_3_virtual_joint">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="arm_3_virtual_joint_actr">
     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     <mechanicalReduction>1</mechanicalReduction>
   </actuator>
