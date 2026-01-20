@@ -88,7 +88,7 @@ launch:
       output: "screen"
       param:
         - name: "port"
-          value: "/dev/ttyACM0"
+          value: "/dev/ttyACM1"
         - name: "baud"
           value: 9600
         - name: "frame_id"
