@@ -253,14 +253,14 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="file://$(find trc2026_description)/meshes/arm_1_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://trc2026_description/meshes/arm_1_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver"/>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="file://$(find trc2026_description)/meshes/arm_1_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://trc2026_description/meshes/arm_1_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -274,14 +274,14 @@
     <visual>
       <origin xyz="0.1077 -3e-06 -0.960058" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="file://$(find trc2026_description)/meshes/hand_right_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://trc2026_description/meshes/hand_right_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver"/>
     </visual>
     <collision>
       <origin xyz="0.1077 -3e-06 -0.960058" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="file://$(find trc2026_description)/meshes/hand_right_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://trc2026_description/meshes/hand_right_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -295,14 +295,14 @@
     <visual>
       <origin xyz="-0.1077 -3e-06 -0.960058" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="file://$(find trc2026_description)/meshes/hand_left_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://trc2026_description/meshes/hand_left_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver"/>
     </visual>
     <collision>
       <origin xyz="-0.1077 -3e-06 -0.960058" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="file://$(find trc2026_description)/meshes/hand_left_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://trc2026_description/meshes/hand_left_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -316,14 +316,14 @@
     <visual>
       <origin xyz="0 0 -0.882" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="file://$(find trc2026_description)/meshes/arm_4_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://trc2026_description/meshes/arm_4_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver"/>
     </visual>
     <collision>
       <origin xyz="0 0 -0.882" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="file://$(find trc2026_description)/meshes/arm_4_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://trc2026_description/meshes/arm_4_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -337,14 +337,14 @@
     <visual>
       <origin xyz="0 0 -0.482" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="file://$(find trc2026_description)/meshes/arm_3_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://trc2026_description/meshes/arm_3_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver"/>
     </visual>
     <collision>
       <origin xyz="0 0 -0.482" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="file://$(find trc2026_description)/meshes/arm_3_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://trc2026_description/meshes/arm_3_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -358,14 +358,14 @@
     <visual>
       <origin xyz="-0.056 -0.0 -0.082" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="file://$(find trc2026_description)/meshes/arm_2_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://trc2026_description/meshes/arm_2_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver"/>
     </visual>
     <collision>
       <origin xyz="-0.056 -0.0 -0.082" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="file://$(find trc2026_description)/meshes/arm_2_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://trc2026_description/meshes/arm_2_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -379,14 +379,14 @@
     <visual>
       <origin xyz="0.0 0 -0.082" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="file://$(find trc2026_description)/meshes/arm_3_rotate_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://trc2026_description/meshes/arm_3_rotate_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver"/>
     </visual>
     <collision>
       <origin xyz="0.0 0 -0.082" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="file://$(find trc2026_description)/meshes/arm_3_rotate_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://trc2026_description/meshes/arm_3_rotate_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -400,14 +400,14 @@
     <visual>
       <origin xyz="0.0 -0.099619 -0.090716" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="file://$(find trc2026_description)/meshes/arm_3_shaft_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://trc2026_description/meshes/arm_3_shaft_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver"/>
     </visual>
     <collision>
       <origin xyz="0.0 -0.099619 -0.090716" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="file://$(find trc2026_description)/meshes/arm_3_shaft_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://trc2026_description/meshes/arm_3_shaft_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -437,7 +437,7 @@
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/>
     </inertial>
-  </link>>
+  </link>
 
   <joint name="drive_right_forward_joint" type="continuous">
     <origin xyz="0.0 0.035 -0.2233" rpy="0 0 0"/>
