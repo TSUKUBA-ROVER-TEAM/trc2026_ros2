@@ -2,6 +2,8 @@ name: ROS 2 Jazzy CI
 
 on:
   push:
+    branches:
+      - main
   pull_request:
 
 jobs:
