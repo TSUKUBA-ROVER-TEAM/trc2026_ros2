@@ -16,6 +16,12 @@ install(PROGRAMS
   RENAME robstride_bridge_node
 )
 
+install(PROGRAMS
+  scripts/robstride_teleop.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME robstride_teleop_node
+)
+
 install(DIRECTORY
   scripts/robstride_dynamics
   DESTINATION lib/${PROJECT_NAME}
