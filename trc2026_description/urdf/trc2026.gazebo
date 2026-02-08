@@ -4,10 +4,16 @@
 <xacro:property name="body_color" value="Gazebo/Silver" />
 
 <xacro:arg name="gazebo"                       default="ignition" />
+<xacro:arg name="use_fake_hardware"            default="false" />
 
 <ros2_control name="GazeboSimSystem" type="system">
   <hardware>
-    <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    <xacro:if value="$(arg use_fake_hardware)">
+      <plugin>mock_components/GenericSystem</plugin>
+    </xacro:if>
+    <xacro:unless value="$(arg use_fake_hardware)">
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </xacro:unless>
   </hardware>
   <joint name="drive_left_forward_joint">
     <command_interface name="velocity">velocity</command_interface>
@@ -51,11 +57,14 @@
   </joint>
 </ros2_control>
 
+<!-- 修正: 仮想モードの時はGazeboプラグインを読み込まない -->
+<xacro:unless value="$(arg use_fake_hardware)">
 <gazebo>
   <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
     <parameters>$(find trc2026_gazebo)/config/gz_ros2_control.yaml</parameters>
   </plugin>
 </gazebo>
+</xacro:unless>
 
 <gazebo reference="base_link">
   <material>${body_color}</material>
