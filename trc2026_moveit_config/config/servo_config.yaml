@@ -1,0 +1,24 @@
+servo_node:
+  ros__parameters:
+    moveit_servo:
+      use_gazebo: false
+      command_in_type: "speed_units"
+      scale:
+        joint: 0.5
+        cartesian: 0.1
+        rotational: 0.2
+      publish_period: 0.01
+      command_out_type: "trajectory_msgs/JointTrajectory"
+      publish_joint_positions: true
+      publish_joint_velocities: true
+      publish_joint_accelerations: false
+      joint_topic_threshold: 0.001
+      move_group_name: "arm"
+      planning_frame: "base_footprint"
+      ee_frame_name: "arm_4_link"
+      robot_link_command_frame: "base_footprint"
+      incoming_command_timeout: 0.1
+      num_outgoing_halt_msgs_to_publish: 4
+      joint_limit_margin: 0.1
+      joint_states_topic: "/joint_states"
+      use_smoothing: false
