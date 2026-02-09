@@ -1,35 +1,28 @@
 cmake_minimum_required(VERSION 3.8)
-project(trc2026_driver)
+project(trc2026_msgs)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-find_package(ament_cmake_auto REQUIRED)
-ament_auto_find_build_dependencies()
+# find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(builtin_interfaces REQUIRED)
+find_package(std_msgs REQUIRED)
 
-ament_auto_add_library(robstride_bridge SHARED
-  src/robstride_bridge.cpp
+set(msg_files
+  msg/Can.msg
 )
 
-rclcpp_components_register_node(robstride_bridge
-  PLUGIN "trc2026_driver::RobstrideBridge"
-  EXECUTABLE robstride_bridge_node
+rosidl_generate_interfaces(${PROJECT_NAME}
+  ${msg_files}
+  DEPENDENCIES
+  builtin_interfaces
+  std_msgs
 )
 
-ament_python_install_package(${PROJECT_NAME})
-
-install(PROGRAMS
-  scripts/can_tx_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME can_tx_node
-)
-
-install(PROGRAMS
-  scripts/can_rx_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME can_rx_node
-)
+ament_export_dependencies(rosidl_default_runtime)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -43,4 +36,4 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_auto_package()
+ament_package()
