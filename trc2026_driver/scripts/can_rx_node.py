@@ -3,7 +3,7 @@
 import threading
 import time
 
-from abu2026_msgs.msg import Can
+from trc2026_msgs.msg import Can
 import can
 
 import rclpy
@@ -38,7 +38,7 @@ class CanRx(Node):
             self.bus = can.Bus(
                 interface='socketcan',
                 channel=self.can_interface,
-                fd=True
+                fd=False
             )
             self.get_logger().info(f'Rx: Connected to {self.can_interface}')
         except Exception:

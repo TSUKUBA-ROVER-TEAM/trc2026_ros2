@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 
-from abu2026_msgs.msg import Can
+from trc2026_msgs.msg import Can
 import can
 
 import rclpy
@@ -34,7 +34,7 @@ class CanTx(Node):
             self.bus = can.Bus(
                 interface='socketcan',
                 channel=self.can_interface,
-                fd=True
+                fd=False
             )
             self.get_logger().info(f'Tx: Connected to {self.can_interface}')
         except Exception:
@@ -51,13 +51,18 @@ class CanTx(Node):
                 arbitration_id=msg.id,
                 data=data_bytes,
                 is_extended_id=msg.is_extended,
-                is_fd=True
+                is_fd=False
             )
 
             # 送信実行
             self.bus.send(can_msg)
 
         except (can.CanError, OSError) as e:
+            # Buffer full error (ENOBUFS) should be handled without reset
+            if isinstance(e, OSError) and e.errno == 105:
+                self.get_logger().warning('Tx: No buffer space available, dropping frame.')
+                return
+            
             # USBが抜けると OSError: [Errno 19] No such device 等が発生
             self.get_logger().error(f'Tx Error: {e}. Resetting connection...')
             self.cleanup_bus()

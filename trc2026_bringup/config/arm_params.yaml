@@ -1,0 +1,6 @@
+robstride_bridge_node:
+  ros__parameters:
+    joint_names:
+      - arm_3_joint
+    motor_ids:
+      - 3
