@@ -3,7 +3,7 @@
 namespace trc2026_manual
 {
 DriveManualController::DriveManualController(const rclcpp::NodeOptions & options)
-: BaseManualController("drive_manual_controller", options)
+: BaseManualController("drive_manual_controller_node", options)
 {
   cmd_vel_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
 
@@ -14,7 +14,11 @@ DriveManualController::DriveManualController(const rclcpp::NodeOptions & options
   this->get_parameter("axis_linear_x", axis_linear_x_);
   this->get_parameter("axis_linear_y", axis_linear_y_);
   this->get_parameter("axis_angular_z", axis_angular_z_);
+
+  RCLCPP_INFO(this->get_logger(), "Drive Manual Controller Node has been started.");
 }
+
+
 
 void DriveManualController::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
 {

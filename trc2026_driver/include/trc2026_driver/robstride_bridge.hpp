@@ -5,6 +5,7 @@
 
 #include "control_msgs/msg/joint_jog.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
+#include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trc2026_msgs/msg/can.hpp"
 
 #include <map>
@@ -88,6 +89,7 @@ private:
 
   void from_can_bus_callback(const trc2026_msgs::msg::Can::SharedPtr msg);
   void joint_jog_callback(const control_msgs::msg::JointJog::SharedPtr msg);
+  void joint_trajectory_callback(const trajectory_msgs::msg::JointTrajectory::SharedPtr msg);
   void publish_to_can_bus();
   void publish_joint_state();
   void try_initialize_motors();
@@ -102,6 +104,7 @@ private:
 
   rclcpp::Subscription<trc2026_msgs::msg::Can>::SharedPtr can_bus_subscriber_;
   rclcpp::Subscription<control_msgs::msg::JointJog>::SharedPtr joint_jog_subscriber_;
+  rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_trajectory_subscriber_;
 
   rclcpp::TimerBase::SharedPtr control_timer_;
   rclcpp::TimerBase::SharedPtr joint_state_timer_;

@@ -32,6 +32,8 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
     std::bind(&RobstrideBridge::from_can_bus_callback, this, std::placeholders::_1));
   joint_jog_subscriber_ = this->create_subscription<control_msgs::msg::JointJog>(
     "joint_jog", 10, std::bind(&RobstrideBridge::joint_jog_callback, this, std::placeholders::_1));
+  joint_trajectory_subscriber_ = this->create_subscription<trajectory_msgs::msg::JointTrajectory>(
+    "joint_trajectory", 10, std::bind(&RobstrideBridge::joint_trajectory_callback, this, std::placeholders::_1));
 
   control_timer_ = this->create_wall_timer(
     std::chrono::milliseconds(10), std::bind(&RobstrideBridge::publish_to_can_bus, this));
@@ -138,6 +140,29 @@ void RobstrideBridge::joint_jog_callback(const control_msgs::msg::JointJog::Shar
     
     RCLCPP_INFO(this->get_logger(), "Motor %d target updated: Pos=%.3f, Vel=%.3f", 
                 id, state.target_position, state.target_velocity);
+  }
+}
+
+void RobstrideBridge::joint_trajectory_callback(const trajectory_msgs::msg::JointTrajectory::SharedPtr msg)
+{
+  std::lock_guard<std::mutex> lock(motor_states_mutex_);
+  if (msg->points.empty()) return;
+  
+  const auto& point = msg->points[0];
+  for (size_t i = 0; i < msg->joint_names.size(); ++i) {
+    const std::string& name = msg->joint_names[i];
+    if (name_to_id_.find(name) == name_to_id_.end()) continue;
+    
+    uint8_t id = name_to_id_[name];
+    auto& state = motor_states_[id];
+    state.is_active = true;
+
+    if (i < point.positions.size()) {
+       state.target_position = point.positions[i];
+    }
+    if (i < point.velocities.size()) {
+       state.target_velocity = point.velocities[i];
+    }
   }
 }
 

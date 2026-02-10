@@ -1,6 +1,13 @@
 robstride_bridge_node:
   ros__parameters:
     joint_names:
+      - arm_1_joint
+      - arm_2_joint
       - arm_3_joint
+      - arm_4_joint
     motor_ids:
+      - 1
+      - 2
       - 3
+      - 4
+    host_id: 255
