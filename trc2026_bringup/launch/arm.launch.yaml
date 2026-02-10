@@ -16,3 +16,14 @@ launch:
       param:
         - from: "$(find-pkg-share trc2026_bringup)/config/arm_params.yaml"
       output: screen
+
+  - node:
+      pkg: trc2026_manual
+      exec: arm_manual_controller_node
+      name: arm_manual_controller_node
+      output: screen
+
+  - node:
+      pkg: joy
+      exec: joy_node
+      name: joy_node

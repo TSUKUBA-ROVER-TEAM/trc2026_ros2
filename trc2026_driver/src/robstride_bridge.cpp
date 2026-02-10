@@ -128,9 +128,6 @@ void RobstrideBridge::joint_jog_callback(const control_msgs::msg::JointJog::Shar
     state.id = id;
     state.is_active = true;
     
-    // If receiving a command before first status, we follow the command's absolute position if given
-    // or initialize to 0. But normally displacements are relative.
-    
     if (!msg->displacements.empty() && i < msg->displacements.size()) {
       state.target_position += msg->displacements[i];
     }
