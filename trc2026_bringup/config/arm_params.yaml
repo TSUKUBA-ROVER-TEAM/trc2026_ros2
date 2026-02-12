@@ -10,4 +10,14 @@ robstride_bridge_node:
       - 2
       - 3
       - 4
+    kp_gains:
+      - 30.0
+      - 80.0
+      - 30.0
+      - 30.0
+    kd_gains:
+      - 0.5
+      - 2.0
+      - 0.5
+      - 0.5
     host_id: 255

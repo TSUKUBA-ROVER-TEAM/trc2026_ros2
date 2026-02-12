@@ -12,7 +12,7 @@ servo_node:
       publish_joint_positions: true
       publish_joint_velocities: true
       publish_joint_accelerations: false
-      joint_topic_threshold: 0.001
+      joint_topic_threshold: 0.0001
       move_group_name: "arm"
       planning_frame: "base_footprint"
       ee_frame_name: "arm_4_link"

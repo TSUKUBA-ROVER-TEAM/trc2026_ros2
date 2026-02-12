@@ -11,6 +11,12 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
 
   auto names = this->get_parameter("joint_names").as_string_array();
   auto ids = this->get_parameter("motor_ids").as_integer_array();
+  
+  this->declare_parameter("kp_gains", std::vector<double>{});
+  this->declare_parameter("kd_gains", std::vector<double>{});
+  auto kps = this->get_parameter("kp_gains").as_double_array();
+  auto kds = this->get_parameter("kd_gains").as_double_array();
+
   host_id_ = this->get_parameter("host_id").as_int();
 
   for (size_t i = 0; i < std::min(names.size(), ids.size()); ++i) {
@@ -21,7 +27,12 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
     state.id = id;
     state.is_active = false;
     state.initialized = false;
-    RCLCPP_INFO(this->get_logger(), "Mapped joint '%s' to motor ID %d", names[i].c_str(), id);
+    
+    state.kp = (i < kps.size()) ? kps[i] : 30.0;
+    state.kd = (i < kds.size()) ? kds[i] : 0.5;
+
+    RCLCPP_INFO(this->get_logger(), "Mapped joint '%s' to motor ID %d (Kp=%.1f, Kd=%.1f)", 
+                names[i].c_str(), id, state.kp, state.kd);
   }
 
   can_bus_publisher_ = this->create_publisher<trc2026_msgs::msg::Can>("to_can_bus_fd", 10);
@@ -65,7 +76,6 @@ void RobstrideBridge::from_can_bus_callback(const trc2026_msgs::msg::Can::Shared
   uint8_t motor_id = (msg->id >> 8) & 0xFF;
   uint8_t target_id = msg->id & 0xFF;
 
-  // Debug logging to see what's happening on the bus
   RCLCPP_DEBUG(this->get_logger(), "RX: ID=0x%08X (Type=%d, Motor=%d, Target=%d)", 
                msg->id, comm_type, motor_id, target_id);
 
@@ -80,10 +90,8 @@ void RobstrideBridge::from_can_bus_callback(const trc2026_msgs::msg::Can::Shared
 
   if (!state.initialized) {
     state.target_position = state.position;
-    state.kp = 30.0; // Default safe Kp
-    state.kd = 0.5;  // Default safe Kd
     state.initialized = true;
-    RCLCPP_INFO(this->get_logger(), "Motor ID %d initialized (Sync Pos: %.3f)", motor_id, state.position);
+    RCLCPP_INFO(this->get_logger(), "Motor ID %d status received (Sync Pos: %.3f)", motor_id, state.position);
   }
 
   if (msg->data.size() >= 8) {
@@ -97,8 +105,7 @@ void RobstrideBridge::from_can_bus_callback(const trc2026_msgs::msg::Can::Shared
     state.effort = uint_to_float(tq_raw, ModelScale::T_MIN, ModelScale::T_MAX, 16);
     state.temperature = (double)temp_raw / 10.0;
 
-    // Log status flags if any
-    uint16_t status_bits = (msg->id >> 16) & 0xFF; // Only bits 23-16 are relevant for status in Type 2
+    uint16_t status_bits = (msg->id >> 16) & 0xFF;
     if (status_bits > 0) {
       RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000, 
                            "Motor %d Status Bits: 0x%02X (Fault=%d, OverTemp=%d, UnderVolt=%d)", 
@@ -167,7 +174,7 @@ void RobstrideBridge::publish_to_can_bus()
 {
   std::lock_guard<std::mutex> lock(motor_states_mutex_);
   for (auto const& [id, state] : motor_states_) {
-    if (!state.is_active) continue;
+    if (!state.is_active || !state.initialized) continue;
 
     trc2026_msgs::msg::Can can_msg;
     can_msg.header.stamp = this->now();
@@ -182,11 +189,8 @@ void RobstrideBridge::publish_to_can_bus()
     uint16_t kd_u16 = float_to_uint(state.kd, ModelScale::KD_MIN, ModelScale::KD_MAX, 16);
     uint16_t torque_u16 = float_to_uint(state.target_effort, ModelScale::T_MIN, ModelScale::T_MAX, 16);
 
-    // Protocol Type 1 (MIT Mode)
-    // ID bits: [28-24: CommType=1] [23-8: Torque] [7-0: MotorID]
     can_msg.id = (1 << 24) | (torque_u16 << 8) | id;
 
-    // Data: pos(2) | vel(2) | kp(2) | kd(2) (Big Endian)
     can_msg.data[0] = (pos_u16 >> 8) & 0xFF;
     can_msg.data[1] = pos_u16 & 0xFF;
     can_msg.data[2] = (vel_u16 >> 8) & 0xFF;
@@ -225,11 +229,10 @@ void RobstrideBridge::try_initialize_motors()
 {
   std::lock_guard<std::mutex> lock(motor_states_mutex_);
   for (auto const& [id, state] : motor_states_) {
-    if (!state.initialized) {
-      RCLCPP_INFO(this->get_logger(), "Attempting to initialize motor ID: %d", id);
-      send_enable(id);
-      send_set_mode(id, 0); // MIT Mode
-      // Optional: Set limits
+    send_enable(id);
+    
+    if (state.initialized) {
+      send_set_mode(id, 0); 
       send_write_limit(id, ParamID::VELOCITY_LIMIT, 30.0);
       send_write_limit(id, ParamID::TORQUE_LIMIT, 12.0);
     }
@@ -265,7 +268,6 @@ void RobstrideBridge::send_set_mode(uint8_t id, uint8_t mode)
   msg.len = 8;
   msg.data.resize(8, 0);
   
-  // Param ID: RUN_MODE (0x7005)
   msg.data[0] = ParamID::MODE & 0xFF;
   msg.data[1] = (ParamID::MODE >> 8) & 0xFF;
   msg.data[4] = mode;
@@ -288,7 +290,7 @@ void RobstrideBridge::send_write_limit(uint8_t id, uint16_t param_id, float limi
   
   can_bus_publisher_->publish(msg);
 }
-}  // namespace trc2026_driver
+}
 
 #include "rclcpp_components/register_node_macro.hpp"
 RCLCPP_COMPONENTS_REGISTER_NODE(trc2026_driver::RobstrideBridge)
