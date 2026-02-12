@@ -1,4 +1,5 @@
 #include "trc2026_driver/robstride_bridge.hpp"
+#include <cmath>
 
 namespace trc2026_driver
 {
@@ -8,6 +9,9 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
   this->declare_parameter("joint_names", std::vector<std::string>{});
   this->declare_parameter("motor_ids", std::vector<int64_t>{});
   this->declare_parameter("host_id", 0xFF);
+  this->declare_parameter("gravity_comp_k2a", 0.0);
+  this->declare_parameter("gravity_comp_k2b", 0.0);
+  this->declare_parameter("gravity_comp_k3", 0.0);
 
   auto names = this->get_parameter("joint_names").as_string_array();
   auto ids = this->get_parameter("motor_ids").as_integer_array();
@@ -18,6 +22,9 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
   auto kds = this->get_parameter("kd_gains").as_double_array();
 
   host_id_ = this->get_parameter("host_id").as_int();
+  gravity_comp_k2a_ = this->get_parameter("gravity_comp_k2a").as_double();
+  gravity_comp_k2b_ = this->get_parameter("gravity_comp_k2b").as_double();
+  gravity_comp_k3_ = this->get_parameter("gravity_comp_k3").as_double();
 
   for (size_t i = 0; i < std::min(names.size(), ids.size()); ++i) {
     uint8_t id = static_cast<uint8_t>(ids[i]);
@@ -173,8 +180,19 @@ void RobstrideBridge::joint_trajectory_callback(const trajectory_msgs::msg::Join
 void RobstrideBridge::publish_to_can_bus()
 {
   std::lock_guard<std::mutex> lock(motor_states_mutex_);
+  
+  double th2 = motor_states_.count(2) ? motor_states_[2].position : 0.0;
+  double th3 = motor_states_.count(3) ? motor_states_[3].position : 0.0;
+
   for (auto const& [id, state] : motor_states_) {
     if (!state.is_active || !state.initialized) continue;
+
+    double gravity_comp = 0.0;
+    if (id == 2) {
+      gravity_comp = gravity_comp_k2a_ * std::cos(th2) + gravity_comp_k2b_ * std::cos(th2 + th3);
+    } else if (id == 3) {
+      gravity_comp = gravity_comp_k3_ * std::cos(th2 + th3);
+    }
 
     trc2026_msgs::msg::Can can_msg;
     can_msg.header.stamp = this->now();
@@ -187,7 +205,7 @@ void RobstrideBridge::publish_to_can_bus()
     uint16_t vel_u16 = float_to_uint(state.target_velocity, ModelScale::V_MIN, ModelScale::V_MAX, 16);
     uint16_t kp_u16 = float_to_uint(state.kp, ModelScale::KP_MIN, ModelScale::KP_MAX, 16);
     uint16_t kd_u16 = float_to_uint(state.kd, ModelScale::KD_MIN, ModelScale::KD_MAX, 16);
-    uint16_t torque_u16 = float_to_uint(state.target_effort, ModelScale::T_MIN, ModelScale::T_MAX, 16);
+    uint16_t torque_u16 = float_to_uint(state.target_effort + gravity_comp, ModelScale::T_MIN, ModelScale::T_MAX, 16);
 
     can_msg.id = (1 << 24) | (torque_u16 << 8) | id;
 

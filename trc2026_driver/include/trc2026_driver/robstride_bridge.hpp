@@ -116,6 +116,10 @@ private:
   std::map<std::string, uint8_t> name_to_id_;
   std::map<uint8_t, std::string> id_to_name_;
   std::mutex motor_states_mutex_;
+
+  double gravity_comp_k2a_ = 0.0;
+  double gravity_comp_k2b_ = 0.0;
+  double gravity_comp_k3_ = 0.0;
 };
 
 }  // namespace trc2026_driver
