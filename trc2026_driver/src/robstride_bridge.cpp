@@ -3,8 +3,8 @@
 
 namespace trc2026_driver
 {
-RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
-: Node("robstride_bridge", options)
+ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
+: Node("robstride_bridge", options), last_jog_time_(0, 0, RCL_ROS_TIME)
 {
   this->declare_parameter("joint_names", std::vector<std::string>{});
   this->declare_parameter("motor_ids", std::vector<int64_t>{});
@@ -152,15 +152,16 @@ void RobstrideBridge::joint_jog_callback(const control_msgs::msg::JointJog::Shar
     state.id = id;
     state.is_active = true;
     
-    if (!msg->displacements.empty() && i < msg->displacements.size()) {
-      state.target_position += msg->displacements[i];
-    }
     if (!msg->velocities.empty() && i < msg->velocities.size()) {
       state.target_velocity = msg->velocities[i];
+      {
+        std::lock_guard<std::mutex> time_lock(last_jog_time_mutex_);
+        last_jog_time_ = this->now();
+      }
     }
     
-    RCLCPP_INFO(this->get_logger(), "Motor %d target updated: Pos=%.3f, Vel=%.3f", 
-                id, state.target_position, state.target_velocity);
+    RCLCPP_DEBUG(this->get_logger(), "Motor %d target velocity updated: %.3f", 
+                 id, state.target_velocity);
   }
 }
 
@@ -207,6 +208,20 @@ void RobstrideBridge::publish_to_can_bus()
     }
 
     if (!state.initialized) continue;
+
+    // Jog Watchdog
+    {
+      std::lock_guard<std::mutex> time_lock(last_jog_time_mutex_);
+      if ((this->now() - last_jog_time_).seconds() > 0.2) {
+        state.target_velocity = 0.0;
+      }
+    }
+
+    // Velocity Integration
+    if (std::abs(state.target_velocity) > 1e-6) {
+      // Integrate velocity (dt = 0.01s based on timer period)
+      state.target_position += state.target_velocity * 0.01;
+    }
 
     // Jump Prevention
     if (std::abs(state.target_position - state.position) > safety_threshold_) {

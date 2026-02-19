@@ -119,6 +119,8 @@ private:
   std::map<uint8_t, MotorState> motor_states_;
   std::map<std::string, uint8_t> name_to_id_;
   std::map<uint8_t, std::string> id_to_name_;
+  rclcpp::Time last_jog_time_;
+  std::mutex last_jog_time_mutex_;
   std::mutex motor_states_mutex_;
 
   double gravity_comp_k2a_ = 0.0;

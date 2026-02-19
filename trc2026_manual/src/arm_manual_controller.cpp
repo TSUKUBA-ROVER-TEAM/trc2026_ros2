@@ -12,7 +12,7 @@ ArmManualController::ArmManualController(const rclcpp::NodeOptions & options)
     std::vector<std::string>{"arm_1_joint", "arm_2_joint", "arm_3_joint", "arm_4_joint"});
   this->declare_parameter("button_indices", std::vector<int64_t>{0, 1, 2, 3});
   this->declare_parameter("axis_indices", std::vector<int64_t>{7, 7, 7, 7});
-  this->declare_parameter("scale", 0.01);
+  this->declare_parameter("scale", 0.2);
   this->declare_parameter("deadzone", 0.01);
 
   this->get_parameter("joint_names", joint_names_);
@@ -40,9 +40,9 @@ void ArmManualController::joy_callback(const sensor_msgs::msg::Joy::SharedPtr ms
           float axis_val = msg->axes[axis];
           if (std::abs(axis_val) > deadzone_) {
             joint_jog_msg.joint_names.push_back(joint_names_[i]);
-            joint_jog_msg.displacements.push_back(axis_val * scale_);
+            joint_jog_msg.velocities.push_back(axis_val * scale_);
             RCLCPP_INFO(
-              this->get_logger(), "Jogging joint %s with displacement %.3f", joint_names_[i].c_str(),
+              this->get_logger(), "Jogging joint %s with velocity %.3f", joint_names_[i].c_str(),
               axis_val * scale_);
           }
         }
