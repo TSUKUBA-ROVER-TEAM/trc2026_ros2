@@ -34,7 +34,8 @@ private:
   std::vector<std::string> joint_names_;
   std::vector<int64_t> button_indices_;
   std::vector<int64_t> axis_indices_;
-  double scale_;
+  double scale_ = 0.01;
+  double deadzone_ = 0.05;
 };
 
 }  // namespace trc2026_manual

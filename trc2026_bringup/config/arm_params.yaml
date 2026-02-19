@@ -12,15 +12,17 @@ robstride_bridge_node:
       - 4
     kp_gains:
       - 30.0
-      - 80.0
+      - 30.0
       - 30.0
       - 30.0
     kd_gains:
       - 0.5
-      - 2.0
+      - 0.5
       - 0.5
       - 0.5
     host_id: 255
     gravity_comp_k2a: 0.0
     gravity_comp_k2b: 0.0
     gravity_comp_k3: 0.0
+    torque_limit: 15.0
+    velocity_limit: 30.0

@@ -21,10 +21,19 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
   auto kps = this->get_parameter("kp_gains").as_double_array();
   auto kds = this->get_parameter("kd_gains").as_double_array();
 
+  this->declare_parameter("safety_threshold", 0.5);
+  this->declare_parameter("timeout_limit", 0.5);
+  this->declare_parameter("torque_limit", 12.0);
+  this->declare_parameter("velocity_limit", 30.0);
+
   host_id_ = this->get_parameter("host_id").as_int();
   gravity_comp_k2a_ = this->get_parameter("gravity_comp_k2a").as_double();
   gravity_comp_k2b_ = this->get_parameter("gravity_comp_k2b").as_double();
   gravity_comp_k3_ = this->get_parameter("gravity_comp_k3").as_double();
+  safety_threshold_ = this->get_parameter("safety_threshold").as_double();
+  timeout_limit_ = this->get_parameter("timeout_limit").as_double();
+  torque_limit_ = this->get_parameter("torque_limit").as_double();
+  velocity_limit_ = this->get_parameter("velocity_limit").as_double();
 
   for (size_t i = 0; i < std::min(names.size(), ids.size()); ++i) {
     uint8_t id = static_cast<uint8_t>(ids[i]);
@@ -94,6 +103,7 @@ void RobstrideBridge::from_can_bus_callback(const trc2026_msgs::msg::Can::Shared
   auto& state = motor_states_[motor_id];
   state.id = motor_id;
   state.is_active = true;
+  state.last_update_time = this->now();
 
   if (!state.initialized) {
     state.target_position = state.position;
@@ -184,8 +194,26 @@ void RobstrideBridge::publish_to_can_bus()
   double th2 = motor_states_.count(2) ? motor_states_[2].position : 0.0;
   double th3 = motor_states_.count(3) ? motor_states_[3].position : 0.0;
 
-  for (auto const& [id, state] : motor_states_) {
-    if (!state.is_active || !state.initialized) continue;
+  for (auto& [id, state] : motor_states_) {
+    if (!state.is_active) continue;
+
+    // Timeout Check
+    if ((this->now() - state.last_update_time).seconds() > timeout_limit_) {
+      if (state.initialized) {
+        RCLCPP_WARN(this->get_logger(), "Motor %d communication timeout. Offlining.", id);
+        state.initialized = false;
+      }
+      continue;
+    }
+
+    if (!state.initialized) continue;
+
+    // Jump Prevention
+    if (std::abs(state.target_position - state.position) > safety_threshold_) {
+      RCLCPP_WARN(this->get_logger(), "Joint %d position gap too large (%.3f). Syncing to actual.", id, std::abs(state.target_position - state.position));
+      state.target_position = state.position;
+      state.target_velocity = 0.0;
+    }
 
     double gravity_comp = 0.0;
     if (id == 2) {
@@ -251,8 +279,8 @@ void RobstrideBridge::try_initialize_motors()
     
     if (state.initialized) {
       send_set_mode(id, 0); 
-      send_write_limit(id, ParamID::VELOCITY_LIMIT, 30.0);
-      send_write_limit(id, ParamID::TORQUE_LIMIT, 12.0);
+      send_write_limit(id, ParamID::VELOCITY_LIMIT, static_cast<float>(velocity_limit_));
+      send_write_limit(id, ParamID::TORQUE_LIMIT, static_cast<float>(torque_limit_));
     }
   }
 }

@@ -30,16 +30,20 @@ struct MotorState
   bool is_active;
   bool initialized;
 
+  rclcpp::Time last_update_time;
+
   MotorState() : 
     id(0), position(0), velocity(0), effort(0), temperature(0),
     target_position(0), target_velocity(0), target_effort(0), kp(0), kd(0), 
-    is_active(false), initialized(false) {}
+    is_active(false), initialized(false), last_update_time(0, 0, RCL_ROS_TIME) {}
 };
 
 namespace CommType
 {
 constexpr uint32_t MIT_CONTROL = 1;
+constexpr uint32_t CONTROL = 1;
 constexpr uint32_t STATUS = 2;
+// ...
 constexpr uint32_t ENABLE = 3;
 constexpr uint32_t DISABLE = 4;
 constexpr uint32_t WRITE_PARAM = 18;
@@ -120,6 +124,10 @@ private:
   double gravity_comp_k2a_ = 0.0;
   double gravity_comp_k2b_ = 0.0;
   double gravity_comp_k3_ = 0.0;
+  double safety_threshold_ = 0.5;
+  double timeout_limit_ = 0.5;
+  double torque_limit_ = 12.0;
+  double velocity_limit_ = 30.0;
 };
 
 }  // namespace trc2026_driver
