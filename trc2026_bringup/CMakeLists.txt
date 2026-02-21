@@ -15,6 +15,7 @@ install(
   DIRECTORY launch
   DIRECTORY rviz
   DIRECTORY config
+  DIRECTORY scripts
   DESTINATION share/${PROJECT_NAME}/
 )
 
