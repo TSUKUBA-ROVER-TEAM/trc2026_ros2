@@ -7,3 +7,6 @@ dep/
 .DS_Store
 *.pyc
 __pycache__/
+
+src/uros/*
+src/ros2.repos

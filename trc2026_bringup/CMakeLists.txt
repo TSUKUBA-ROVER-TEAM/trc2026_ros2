@@ -14,7 +14,13 @@ find_package(ament_cmake REQUIRED)
 install(
   DIRECTORY launch
   DIRECTORY rviz
+  DIRECTORY scripts
   DESTINATION share/${PROJECT_NAME}/
+)
+
+install(
+  PROGRAMS bin/go2rtc
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
