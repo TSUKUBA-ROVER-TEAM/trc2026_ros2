@@ -3,9 +3,9 @@
 <package format="3">
   <name>trc2026_gazebo</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Gazebo simulation package for TRC2026 robot</description>
   <maintainer email="kengo171227@gmail.com">kengo</maintainer>
-  <license>TODO: License declaration</license>
+  <license>Apache-2.0</license>
 
   <depend>trc2026_description</depend>
   

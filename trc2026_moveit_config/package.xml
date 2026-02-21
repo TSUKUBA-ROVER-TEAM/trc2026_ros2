@@ -6,7 +6,7 @@
   <description>
      An automatically generated package with all the configuration and launch files for using the trc2026 with the MoveIt Motion Planning Framework
   </description>
-  <maintainer email="todo@todo.com">KengoKishida</maintainer>
+  <maintainer email="kengo171227@gmail.com">KengoKishida</maintainer>
 
   <license>BSD-3-Clause</license>
 
@@ -14,7 +14,7 @@
   <url type="bugtracker">https://github.com/moveit/moveit2/issues</url>
   <url type="repository">https://github.com/moveit/moveit2</url>
 
-  <author email="todo@todo.com">KengoKishida</author>
+  <author email="kengo171227@gmail.com">KengoKishida</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

@@ -5,7 +5,7 @@
   <version>0.0.0</version>
 <description>The trc2026_description package</description>
   <maintainer email="todo@todo.com">author</maintainer>
-  <license>TODO: License declaration</license>
+  <license>Apache-2.0</license>
 
   <depend>xacro</depend>
   <depend>rviz2</depend>

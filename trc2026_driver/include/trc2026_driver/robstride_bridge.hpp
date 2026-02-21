@@ -130,7 +130,7 @@ private:
   rclcpp::TimerBase::SharedPtr joint_state_timer_;
   rclcpp::TimerBase::SharedPtr init_timer_;
 
-  uint8_t host_id_ = 0xFD;  // Default host ID
+  uint8_t host_id_ = 0xFF;  // Default host ID
 
   std::map<uint8_t, MotorState> motor_states_;
   std::map<std::string, uint8_t> name_to_id_;

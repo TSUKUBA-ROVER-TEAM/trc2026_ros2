@@ -228,7 +228,6 @@ void RobstrideBridge::publish_to_can_bus()
 
     // Velocity Integration
     if (std::abs(state.target_velocity) > 1e-6) {
-      // Integrate velocity (dt = 0.01s based on timer period)
       state.target_position += state.target_velocity * 0.01;
     }
 
