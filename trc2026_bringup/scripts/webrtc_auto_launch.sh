@@ -39,7 +39,9 @@ gst-launch-1.0 v4l2src device=/dev/video6 ! \
     image/jpeg,width=1280,height=720,framerate=30/1 ! \
     jpegdec ! \
     videoconvert ! \
-    x264enc tune=zerolatency bitrate=2000 speed-preset=ultrafast ! \
+    x264enc tune=zerolatency bitrate=2000 speed-preset=ultrafast key-int-max=30 ! \
+    video/x-h264,profile=baseline ! \
+    h264parse config-interval=-1 ! \
     mpegtsmux ! \
     udpsink host=127.0.0.1 port=1235 &
 
