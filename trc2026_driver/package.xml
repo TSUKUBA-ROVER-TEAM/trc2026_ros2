@@ -1,15 +1,21 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>trc2026_bringup</name>
+  <name>trc2026_driver</name>
   <version>0.0.0</version>
-  <description>Bringup package for TRC2026 robot</description>
+  <description>Driver package for TRC2026 robot</description>
   <maintainer email="kengo171227@gmail.com">kengo</maintainer>
   <license>Apache-2.0</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
-  <exec_depend>nmea_navsat_driver</exec_depend>
+  <depend>rclcpp</depend>
+  <depend>rclpy</depend>
+  <depend>rclcpp_components</depend>
+  <depend>sensor_msgs</depend>
+  <depend>control_msgs</depend>
+  <depend>trc2026_msgs</depend>
+
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

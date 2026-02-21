@@ -1,44 +1,34 @@
 cmake_minimum_required(VERSION 3.8)
-project(trc2026_manual)
+project(trc2026_driver)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find dependencies
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
-ament_auto_add_library(drive_manual_controller SHARED
-  src/drive_manual_controller.cpp
+ament_auto_add_library(robstride_bridge SHARED
+  src/robstride_bridge.cpp
 )
 
-ament_auto_add_library(joy_filter SHARED
-  src/joy_filter.cpp
+rclcpp_components_register_node(robstride_bridge
+  PLUGIN "trc2026_driver::RobstrideBridge"
+  EXECUTABLE robstride_bridge_node
 )
 
-ament_auto_add_library(arm_manual_controller SHARED
-  src/arm_manual_controller.cpp
+ament_python_install_package(${PROJECT_NAME})
+
+install(PROGRAMS
+  scripts/can_tx_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME can_tx_node
 )
 
-rclcpp_components_register_node(drive_manual_controller
-  PLUGIN "trc2026_manual::DriveManualController"
-  EXECUTABLE drive_manual_controller_node
-)
-
-rclcpp_components_register_node(joy_filter
-  PLUGIN "trc2026_manual::JoyFilter"
-  EXECUTABLE joy_filter_node
-)
-
-rclcpp_components_register_node(arm_manual_controller
-  PLUGIN "trc2026_manual::ArmManualController"
-  EXECUTABLE arm_manual_controller_node
-)
-
-install(DIRECTORY
-  launch
-  DESTINATION share/${PROJECT_NAME}
+install(PROGRAMS
+  scripts/can_rx_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME can_rx_node
 )
 
 if(BUILD_TESTING)

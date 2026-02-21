@@ -1,0 +1,38 @@
+launch:
+  - node:
+      pkg: trc2026_driver
+      exec: can_tx_node
+      name: can_tx_node
+  
+  - node:
+      pkg: trc2026_driver
+      exec: can_rx_node
+      name: can_rx_node
+
+  - node:
+      pkg: "micro_ros_agent"
+      exec: "micro_ros_agent"
+      name: "micro_ros_agent"
+      output: "screen"
+      args: "serial --dev /dev/ttyACM0 --baud 115200"
+
+  - node:
+      pkg: trc2026_driver
+      exec: robstride_bridge_node
+      name: robstride_bridge_node
+      param:
+        - from: "$(find-pkg-share trc2026_bringup)/config/arm_params.yaml"
+      output: screen
+
+  - node:
+      pkg: trc2026_manual
+      exec: arm_manual_controller_node
+      name: arm_manual_controller_node
+      param:
+        - from: "$(find-pkg-share trc2026_bringup)/config/arm_params.yaml"
+      output: screen
+
+  - node:
+      pkg: joy
+      exec: joy_node
+      name: joy_node

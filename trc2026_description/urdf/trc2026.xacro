@@ -2,6 +2,8 @@
 <robot name="trc2026"
   xmlns:xacro="http://www.ros.org/wiki/xacro">
 
+  <xacro:arg name="use_fake_hardware"            default="false" />
+
   <xacro:include filename="$(find trc2026_description)/urdf/materials.xacro" />
   <xacro:include filename="$(find trc2026_description)/urdf/trc2026.trans" />
   <xacro:include filename="$(find trc2026_description)/urdf/trc2026.gazebo" />
@@ -555,19 +557,19 @@
     <mimic joint="arm_2_joint" multiplier="-1.0" offset="0.0"/>
   </joint>
 
-  <joint name="arm_3_rotate_joint" type="continuous">
+  <joint name="arm_3_joint" type="continuous">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <parent link="arm_3_virtual_link"/>
     <child link="arm_3_link"/>
     <axis xyz="1.0 0.0 0.0"/>
-    <mimic joint="arm_3_joint" multiplier="1.0" offset="1.6"/>
   </joint>
 
-  <joint name="arm_3_joint" type="continuous">
+  <joint name="arm_3_motor_joint" type="continuous">
     <origin xyz="0.0 0 0.082" rpy="0 0 0"/>
     <parent link="arm_1_link"/>
     <child link="arm_3_rotate_link"/>
     <axis xyz="1.0 0.0 0.0"/>
+    <mimic joint="arm_3_joint" multiplier="1.0" offset="-1.6"/>
   </joint>
 
   <joint name="arm_3_joint_reversal" type="continuous">
@@ -575,7 +577,7 @@
     <parent link="arm_3_rotate_link"/>
     <child link="shaft_virtual_link"/>
     <axis xyz="1.0 0.0 0.0"/>
-    <mimic joint="arm_3_joint" multiplier="-1.0" offset="0.0"/>
+    <mimic joint="arm_3_motor_joint" multiplier="-1.0" offset="0.0"/>
   </joint>
 
   <joint name="arm_3_virtual_joint" type="continuous">

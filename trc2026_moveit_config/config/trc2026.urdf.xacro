@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="trc2026">
+    <xacro:arg name="initial_positions_file" default="initial_positions.yaml" />
+    <xacro:arg name="use_fake_hardware" default="true" />
+
+    <!-- Import trc2026 urdf file -->
+    <xacro:include filename="$(find trc2026_description)/urdf/trc2026.xacro" />
+
+    <!-- Import control_xacro -->
+    <xacro:include filename="trc2026.ros2_control.xacro" />
+
+
+    <xacro:trc2026_ros2_control name="FakeSystem" initial_positions_file="$(arg initial_positions_file)"/>
+
+</robot>

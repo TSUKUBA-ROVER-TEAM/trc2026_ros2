@@ -1,0 +1,25 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: trc2026_description
+    relative_path: urdf/trc2026.xacro
+  srdf:
+    relative_path: config/trc2026.srdf
+  package_settings:
+    author_name: KengoKishida
+    author_email: ""
+    generated_timestamp: 1769173743
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity
+  modified_urdf:
+    xacros:
+      - control_xacro
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity
