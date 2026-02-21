@@ -7,5 +7,3 @@ dep/
 .DS_Store
 *.pyc
 __pycache__/
-
-src/**
