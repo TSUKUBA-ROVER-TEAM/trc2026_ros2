@@ -62,7 +62,7 @@ class CanTx(Node):
             if isinstance(e, OSError) and e.errno == 105:
                 self.get_logger().warning('Tx: No buffer space available, dropping frame.')
                 return
-            
+
             # USBが抜けると OSError: [Errno 19] No such device 等が発生
             self.get_logger().error(f'Tx Error: {e}. Resetting connection...')
             self.cleanup_bus()
@@ -76,7 +76,8 @@ class CanTx(Node):
                 self.bus.shutdown()
             except Exception as e:
                 # Ignore shutdown errors but log them for diagnostics
-                self.get_logger().warning(f'Error while shutting down CAN bus: {e}')
+                self.get_logger().warning(
+                    f'Error while shutting down CAN bus: {e}')
         self.bus = None
 
     def __del__(self):

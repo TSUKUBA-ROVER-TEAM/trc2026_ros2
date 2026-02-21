@@ -6,7 +6,8 @@ ArmManualController::ArmManualController(const rclcpp::NodeOptions & options)
 : BaseManualController("arm_manual_controller_node", options)
 {
   joint_jog_publisher_ = this->create_publisher<control_msgs::msg::JointJog>("/joint_jog", 10);
-  arm_command_publisher_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("/arm_controller/commands", 10);
+  arm_command_publisher_ =
+    this->create_publisher<std_msgs::msg::Float64MultiArray>("/arm_controller/commands", 10);
 
   this->declare_parameter(
     "joint_names",

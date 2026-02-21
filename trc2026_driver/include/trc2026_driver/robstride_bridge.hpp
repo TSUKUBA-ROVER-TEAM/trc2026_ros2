@@ -32,10 +32,22 @@ struct MotorState
 
   rclcpp::Time last_update_time;
 
-  MotorState() : 
-    id(0), position(0), velocity(0), effort(0), temperature(0),
-    target_position(0), target_velocity(0), target_effort(0), kp(0), kd(0), 
-    is_active(false), initialized(false), last_update_time(0, 0, RCL_ROS_TIME) {}
+  MotorState()
+  : id(0),
+    position(0),
+    velocity(0),
+    effort(0),
+    temperature(0),
+    target_position(0),
+    target_velocity(0),
+    target_effort(0),
+    kp(0),
+    kd(0),
+    is_active(false),
+    initialized(false),
+    last_update_time(0, 0, RCL_ROS_TIME)
+  {
+  }
 };
 
 namespace CommType
@@ -80,8 +92,10 @@ private:
   uint16_t float_to_uint(float x, float x_min, float x_max, int bits)
   {
     float span = x_max - x_min;
-    if (x > x_max) x = x_max;
-    else if (x < x_min) x = x_min;
+    if (x > x_max)
+      x = x_max;
+    else if (x < x_min)
+      x = x_min;
     return (uint16_t)((x - x_min) * ((float)((1 << bits) - 1)) / span);
   }
 
@@ -108,13 +122,14 @@ private:
 
   rclcpp::Subscription<trc2026_msgs::msg::Can>::SharedPtr can_bus_subscriber_;
   rclcpp::Subscription<control_msgs::msg::JointJog>::SharedPtr joint_jog_subscriber_;
-  rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_trajectory_subscriber_;
+  rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr
+    joint_trajectory_subscriber_;
 
   rclcpp::TimerBase::SharedPtr control_timer_;
   rclcpp::TimerBase::SharedPtr joint_state_timer_;
   rclcpp::TimerBase::SharedPtr init_timer_;
 
-  uint8_t host_id_ = 0xFD; // Default host ID
+  uint8_t host_id_ = 0xFD;  // Default host ID
 
   std::map<uint8_t, MotorState> motor_states_;
   std::map<std::string, uint8_t> name_to_id_;

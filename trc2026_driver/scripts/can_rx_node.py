@@ -72,7 +72,8 @@ class CanRx(Node):
                 self.bus.shutdown()
             except Exception as e:
                 # Ignore shutdown errors but log them for diagnostics
-                self.get_logger().warning(f'Error while shutting down CAN bus: {e}')
+                self.get_logger().warning(
+                    f'Error while shutting down CAN bus: {e}')
         self.bus = None
 
     def _convert_can_to_ros(self, can_msg: can.Message) -> Can:
