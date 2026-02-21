@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-
-from trc2026_msgs.msg import Can
 import can
 
 import rclpy
 from rclpy.node import Node
+
+from trc2026_msgs.msg import Can
 
 
 class CanTx(Node):

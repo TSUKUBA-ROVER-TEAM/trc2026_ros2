@@ -92,10 +92,11 @@ private:
   uint16_t float_to_uint(float x, float x_min, float x_max, int bits)
   {
     float span = x_max - x_min;
-    if (x > x_max)
+    if (x > x_max) {
       x = x_max;
-    else if (x < x_min)
+    } else if (x < x_min) {
       x = x_min;
+    }
     return (uint16_t)((x - x_min) * ((float)((1 << bits) - 1)) / span);
   }
 

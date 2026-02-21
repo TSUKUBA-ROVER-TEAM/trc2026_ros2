@@ -89,7 +89,7 @@ RobstrideBridge::~RobstrideBridge()
 
 void RobstrideBridge::from_can_bus_callback(const trc2026_msgs::msg::Can::SharedPtr msg)
 {
-  if (!msg->is_extended) return;
+  if (!msg->is_extended) {return;}
 
   uint32_t comm_type = (msg->id >> 24) & 0x1F;
   uint8_t motor_id = (msg->id >> 8) & 0xFF;
@@ -99,10 +99,10 @@ void RobstrideBridge::from_can_bus_callback(const trc2026_msgs::msg::Can::Shared
     this->get_logger(), "RX: ID=0x%08X (Type=%d, Motor=%d, Target=%d)", msg->id, comm_type,
     motor_id, target_id);
 
-  if (comm_type != CommType::STATUS) return;
+  if (comm_type != CommType::STATUS) {return;}
 
   std::lock_guard<std::mutex> lock(motor_states_mutex_);
-  if (motor_states_.find(motor_id) == motor_states_.end()) return;
+  if (motor_states_.find(motor_id) == motor_states_.end()) {return;}
 
   auto & state = motor_states_[motor_id];
   state.id = motor_id;
@@ -177,12 +177,12 @@ void RobstrideBridge::joint_trajectory_callback(
   const trajectory_msgs::msg::JointTrajectory::SharedPtr msg)
 {
   std::lock_guard<std::mutex> lock(motor_states_mutex_);
-  if (msg->points.empty()) return;
+  if (msg->points.empty()) {return;}
 
   const auto & point = msg->points[0];
   for (size_t i = 0; i < msg->joint_names.size(); ++i) {
     const std::string & name = msg->joint_names[i];
-    if (name_to_id_.find(name) == name_to_id_.end()) continue;
+    if (name_to_id_.find(name) == name_to_id_.end()) {continue;}
 
     uint8_t id = name_to_id_[name];
     auto & state = motor_states_[id];
@@ -205,7 +205,7 @@ void RobstrideBridge::publish_to_can_bus()
   double th3 = motor_states_.count(3) ? motor_states_[3].position : 0.0;
 
   for (auto & [id, state] : motor_states_) {
-    if (!state.is_active) continue;
+    if (!state.is_active) {continue;}
 
     // Timeout Check
     if ((this->now() - state.last_update_time).seconds() > timeout_limit_) {
@@ -216,7 +216,7 @@ void RobstrideBridge::publish_to_can_bus()
       continue;
     }
 
-    if (!state.initialized) continue;
+    if (!state.initialized) {continue;}
 
     // Jog Watchdog
     {

@@ -19,7 +19,6 @@ DriveManualController::DriveManualController(const rclcpp::NodeOptions & options
 }
 
 
-
 void DriveManualController::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
 {
   auto cmd_vel_msg = geometry_msgs::msg::Twist();
