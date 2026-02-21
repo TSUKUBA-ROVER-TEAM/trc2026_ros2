@@ -28,14 +28,14 @@ EOF
 sleep 2
 
 # Camera 1 (HiCamera: H.264 natively)
-gst-launch-1.0 v4l2src device=/dev/video4 ! \
+gst-launch-1.0 v4l2src device=/dev/v4l/by-id/usb-Huawei_HiCamera_12345678-video-index0 ! \
     video/x-h264,width=1280,height=720,framerate=30/1 ! \
     h264parse ! \
     mpegtsmux ! \
     udpsink host=127.0.0.1 port=1234 &
 
 # Camera 2 (DV20 USB: MJPEG encoded to H.264)
-gst-launch-1.0 v4l2src device=/dev/video6 ! \
+gst-launch-1.0 v4l2src device=/dev/v4l/by-id/usb-Jieli_Technology_USB_Composite_Device-video-index0 ! \
     image/jpeg,width=1280,height=720,framerate=30/1 ! \
     jpegdec ! \
     videoconvert ! \
