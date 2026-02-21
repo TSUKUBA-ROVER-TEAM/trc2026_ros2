@@ -72,3 +72,8 @@ launch:
           value: "gps"
         - name: "use_RMC"
           value: false
+
+  - executable:
+      cmd: 'bash $(find-pkg-share trc2026_bringup)/scripts/webrtc_auto_launch.sh'
+      name: 'go2rtc_server'
+      output: 'screen'
