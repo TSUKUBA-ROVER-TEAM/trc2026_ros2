@@ -67,12 +67,38 @@ launch:
         - name: "baud"
           value: 9600
         - name: "frame_id"
-          value: "gps"
+          value: "base_link"
         - name: "time_ref_source"
           value: "gps"
         - name: "use_RMC"
           value: false
 
+  - node:
+      pkg: trc2026_driver
+      exec: robstride_bridge_node
+      name: robstride_bridge_node
+      param:
+        - from: "$(find-pkg-share trc2026_bringup)/config/arm_params.yaml"
+      output: screen
+
+  - node:
+      pkg: trc2026_manual
+      exec: arm_manual_controller_node
+      name: arm_manual_controller_node
+      param:
+        - from: "$(find-pkg-share trc2026_bringup)/config/arm_params.yaml"
+      output: screen
+
+  - node:
+      pkg: trc2026_driver
+      exec: can_tx_node
+      name: can_tx_node
+  
+  - node:
+      pkg: trc2026_driver
+      exec: can_rx_node
+      name: can_rx_node
+      
   - executable:
       cmd: 'bash $(find-pkg-share trc2026_bringup)/scripts/webrtc_auto_launch.sh'
       name: 'go2rtc_server'
