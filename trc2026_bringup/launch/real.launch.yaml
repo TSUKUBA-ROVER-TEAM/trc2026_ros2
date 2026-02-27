@@ -35,7 +35,7 @@ launch:
       exec: "micro_ros_agent"
       name: "micro_ros_agent"
       output: "screen"
-      args: "serial --dev /dev/ttyACM0 --baud 115200"
+      args: "serial --dev /dev/teensy_micro_ros --baud 115200"
 
   - node:
       pkg: "trc2026_manual"
@@ -63,7 +63,7 @@ launch:
       output: "screen"
       param:
         - name: "port"
-          value: "/dev/ttyACM1"
+          value: "/dev/robot_gps"
         - name: "baud"
           value: 9600
         - name: "frame_id"
