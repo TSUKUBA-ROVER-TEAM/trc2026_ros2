@@ -168,7 +168,7 @@ void RobstrideBridge::joint_jog_callback(const control_msgs::msg::JointJog::Shar
       }
     }
 
-    RCLCPP_DEBUG(
+    RCLCPP_INFO(
       this->get_logger(), "Motor %d target velocity updated: %.3f", id, state.target_velocity);
   }
 }
@@ -210,7 +210,9 @@ void RobstrideBridge::publish_to_can_bus()
     // Timeout Check
     if ((this->now() - state.last_update_time).seconds() > timeout_limit_) {
       if (state.initialized) {
-        RCLCPP_WARN(this->get_logger(), "Motor %d communication timeout. Offlining.", id);
+        RCLCPP_WARN(
+          this->get_logger(), "Motor %d communication timeout (last update: %.3f s ago). Offlining.",
+          id, (this->now() - state.last_update_time).seconds());
         state.initialized = false;
       }
       continue;
@@ -234,8 +236,9 @@ void RobstrideBridge::publish_to_can_bus()
     // Jump Prevention
     if (std::abs(state.target_position - state.position) > safety_threshold_) {
       RCLCPP_WARN(
-        this->get_logger(), "Joint %d position gap too large (%.3f). Syncing to actual.", id,
-        std::abs(state.target_position - state.position));
+        this->get_logger(),
+        "Joint %d position gap too large! Target: %.3f, Actual: %.3f, Gap: %.3f. Syncing to actual.",
+        id, state.target_position, state.position, std::abs(state.target_position - state.position));
       state.target_position = state.position;
       state.target_velocity = 0.0;
     }
@@ -303,7 +306,10 @@ void RobstrideBridge::try_initialize_motors()
 {
   std::lock_guard<std::mutex> lock(motor_states_mutex_);
   for (auto const & [id, state] : motor_states_) {
-    send_enable(id);
+    // Only send enable if not recently updated or not initialized
+    if (!state.initialized || (this->now() - state.last_update_time).seconds() > 1.0) {
+      send_enable(id);
+    }
 
     if (state.initialized) {
       send_set_mode(id, 0);

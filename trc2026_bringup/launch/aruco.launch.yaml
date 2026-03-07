@@ -1,0 +1,80 @@
+launch:
+
+# Robot Description (trc2026)
+- node:
+    pkg: robot_state_publisher
+    exec: robot_state_publisher
+    name: robot_state_publisher
+    param:
+    - name: robot_description
+      value: $(command 'xacro $(find-pkg-share trc2026_description)/urdf/trc2026.xacro')
+
+- node:
+    pkg: joint_state_publisher
+    exec: joint_state_publisher
+    name: joint_state_publisher
+
+# Static Transform: camera_link -> camera_base
+# trc2026.xacro defines camera_link on the robot.
+# Azure Kinect driver uses camera_base as the root of its internal TF tree.
+- node:
+    pkg: tf2_ros
+    exec: static_transform_publisher
+    args: "0 0 0 0 0 0 camera_link camera_base"
+
+# Azure Kinect Driver
+- include:
+    file: "$(find-pkg-share azure_kinect_ros_driver)/launch/driver.launch.py"
+    arg:
+    - name: "depth_mode"
+      value: "WFOV_2X2BINNED"
+    - name: "fps"
+      value: "15"
+    - name: "color_resolution"
+      value: "720P"
+    - name: "color_format"
+      value: "bgra"
+    - name: "overwrite_robot_description"
+      value: "false"
+
+# Image Format Conversion: BGRA -> BGR8
+# Azure Kinect outputs BGRA, but aruco_opencv requires BGR8 or Mono8.
+- node:
+    pkg: "trc2026_vision"
+    exec: "bgra_to_bgr_converter"
+    name: "bgra_to_bgr_converter"
+    param:
+    - name: "input_topic"
+      value: "/rgb/image_raw"
+    - name: "output_topic"
+      value: "/rgb/image_bgr"
+
+# ArUco Marker Tracker (aruco_opencv)
+- node:
+    pkg: "aruco_opencv"
+    exec: "aruco_tracker_autostart"
+    name: "aruco_tracker"
+    param:
+    - name: "cam_base_topic"
+      value: "/rgb/image_bgr"
+    - name: "marker_dict"
+      value: "5X5_1000"
+    - name: "image_is_rectified"
+      value: true
+    - name: "marker_size"
+      value: 0.20
+
+# Marker Pose Estimator (Custom Node)
+- node:
+    pkg: "trc2026_vision"
+    exec: "marker_pose_estimator"
+    name: "marker_pose_estimator"
+    param:
+    - name: "camera_info_topic"
+      value: "/rgb/camera_info"
+    - name: "depth_topic"
+      value: "/depth_to_rgb/image_raw"
+    - name: "markers_topic"
+      value: "/aruco_markers"
+    - name: "target_frame"
+      value: "base_link"
