@@ -24,7 +24,6 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'marker_pose_estimator = trc2026_vision.marker_pose_estimator:main',
             'bgra_to_bgr_converter = trc2026_vision.bgra_to_bgr_converter:main',
         ],
     },

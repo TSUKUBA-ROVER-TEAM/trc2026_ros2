@@ -433,7 +433,7 @@
     </inertial>
   </link>
 
-  <link name="camera_link">
+  <link name="camera_base">
     <inertial>
       <mass value="0.01"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -602,7 +602,7 @@
 
   <joint name="camera_joint" type="fixed">
     <parent link="base_link"/>
-    <child link="camera_link"/>
+    <child link="camera_base"/>
     <origin xyz="0.3 0 0.10" rpy="0 0 0"/>
   </joint>
 

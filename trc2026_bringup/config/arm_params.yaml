@@ -26,6 +26,8 @@ robstride_bridge_node:
     gravity_comp_k3: 0.0
     torque_limit: 15.0
     velocity_limit: 30.0
+    safety_threshold: 1.0
+    timeout_limit: 1.0
 
 arm_manual_controller_node:
   ros__parameters:
