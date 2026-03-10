@@ -10,6 +10,10 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <exec_depend>nmea_navsat_driver</exec_depend>
+  <exec_depend>rt_usb_9axisimu_driver</exec_depend>
+  <exec_depend>imu_filter_madgwick</exec_depend>
+  <exec_depend>nav2_lifecycle_manager</exec_depend>
+  <exec_depend>rviz_imu_plugin</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

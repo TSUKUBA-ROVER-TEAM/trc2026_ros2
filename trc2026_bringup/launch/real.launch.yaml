@@ -35,7 +35,7 @@ launch:
       exec: "micro_ros_agent"
       name: "micro_ros_agent"
       output: "screen"
-      args: "serial --dev /dev/teensy_micro_ros --baud 115200"
+      args: "serial --dev /dev/teensy_drive --baud 115200"
 
   - node:
       pkg: "trc2026_manual"
@@ -63,7 +63,7 @@ launch:
       output: "screen"
       param:
         - name: "port"
-          value: "/dev/robot_gps"
+          value: "/dev/gps"
         - name: "baud"
           value: 9600
         - name: "frame_id"
@@ -72,6 +72,43 @@ launch:
           value: "gps"
         - name: "use_RMC"
           value: false
+  
+  - node:
+      pkg: "rt_usb_9axisimu_driver"
+      exec: "rt_usb_9axisimu_driver"
+      name: "rt_usb_9axisimu_driver"
+      param:
+        - name: "port"
+          value: "/dev/imu"
+        - name: "frame_id"
+          value: "imu_link"
+
+  - node:
+      pkg: "imu_filter_madgwick"
+      exec: "imu_filter_madgwick_node"
+      name: "imu_filter_node"
+      param:
+        - name: "use_mag"
+          value: false
+        - name: "publish_tf"
+          value: true
+        - name: "world_frame"
+          value: "map"
+      remap:
+        - from: "/imu/data_raw"
+          to: "/imu/data_raw"
+        - from: "/imu/mag"
+          to: "/imu/mag"
+    
+  - node:
+      pkg: "nav2_lifecycle_manager"
+      exec: "lifecycle_manager"
+      name: "lifecycle_manager_service"
+      param:
+        - name: "autostart"
+          value: true
+        - name: "node_names"
+          value: ["rt_usb_9axisimu_driver"]
 
   - node:
       pkg: trc2026_driver
