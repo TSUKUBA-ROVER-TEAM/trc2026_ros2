@@ -60,6 +60,7 @@ launch:
       pkg: "nmea_navsat_driver"
       exec: "nmea_serial_driver"
       name: "nmea_serial_driver"
+      namespace: "gps"
       output: "screen"
       param:
         - name: "port"
