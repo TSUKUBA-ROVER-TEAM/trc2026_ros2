@@ -5,11 +5,13 @@
 #include <tf2/LinearMath/Quaternion.h>
 
 #include <array>
+#include <chrono>
 
 namespace trc2026_control
 {
 FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & options)
-: Node("four_wheel_steer_controller_node", options), odom_x_(0.0), odom_y_(0.0), odom_yaw_(0.0)
+: Node("four_wheel_steer_controller_node", options), odom_x_(0.0), odom_y_(0.0), odom_yaw_(0.0),
+  cmd_vel_timed_out_(true)
 {
   wheel_positions_.fill(0.0);
   current_drive_vels_.fill(0.0);
@@ -33,19 +35,25 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   this->get_parameter("yaw_vel_scale", yaw_vel_scale_);
   this->get_parameter("publish_joint_states", publish_joint_states_);
 
+  this->declare_parameter<double>("cmd_vel_timeout", 0.5);
+  this->get_parameter("cmd_vel_timeout", cmd_vel_timeout_sec_);
+  last_cmd_vel_time_ = this->now();
+
   wheel_angles_[0] = std::atan2(base_length_ / 2.0, -base_width_ / 2.0);
   wheel_angles_[1] = std::atan2(base_length_ / 2.0, base_width_ / 2.0);
   wheel_angles_[2] = std::atan2(-base_length_ / 2.0, -base_width_ / 2.0);
   wheel_angles_[3] = std::atan2(-base_length_ / 2.0, base_width_ / 2.0);
 
+  auto sensor_qos = rclcpp::SensorDataQoS();
+
   cmd_vel_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
-    "cmd_vel", 10,
+    "cmd_vel", sensor_qos,
     std::bind(&FourWheelSteerController::cmd_vel_callback, this, std::placeholders::_1));
 
   drive_cmd_pub_ =
-    this->create_publisher<std_msgs::msg::Float64MultiArray>("drive_controller/commands", 10);
+    this->create_publisher<std_msgs::msg::Float64MultiArray>("drive_controller/commands", sensor_qos);
   steer_cmd_pub_ =
-    this->create_publisher<std_msgs::msg::Float64MultiArray>("steer_controller/commands", 10);
+    this->create_publisher<std_msgs::msg::Float64MultiArray>("steer_controller/commands", sensor_qos);
 
   tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
   odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
@@ -57,7 +65,11 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
 
   last_time_ = this->now();
 
-  RCLCPP_INFO(this->get_logger(), "FourWheelSteerController node has been initialized.");
+  cmd_vel_timeout_timer_ = this->create_wall_timer(
+    std::chrono::milliseconds(50),
+    std::bind(&FourWheelSteerController::check_cmd_vel_timeout, this));
+
+  RCLCPP_INFO(this->get_logger(), "FourWheelSteerController node has been initialized. cmd_vel timeout: %.2f s", cmd_vel_timeout_sec_);
 }
 
 FourWheelSteerController::~FourWheelSteerController()
@@ -67,6 +79,13 @@ FourWheelSteerController::~FourWheelSteerController()
 
 void FourWheelSteerController::cmd_vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
+  last_cmd_vel_time_ = this->now();
+
+  if (cmd_vel_timed_out_) {
+    RCLCPP_INFO(this->get_logger(), "cmd_vel 受信再開");
+    cmd_vel_timed_out_ = false;
+  }
+
   current_cmd_vel_ = *msg;
   double base_radius = std::hypot(base_length_ / 2.0, base_width_ / 2.0);
 
@@ -81,9 +100,9 @@ void FourWheelSteerController::cmd_vel_callback(const geometry_msgs::msg::Twist:
 
   for (size_t i = 0; i < 4; ++i) {
     double vx = msg->linear.x * x_vel_scale_ +
-      msg->angular.z * yaw_vel_scale_ * base_radius * std::cos(wheel_angles_[i]);
+                msg->angular.z * yaw_vel_scale_ * base_radius * std::cos(wheel_angles_[i]);
     double vy = msg->linear.y * y_vel_scale_ +
-      msg->angular.z * yaw_vel_scale_ * base_radius * std::sin(wheel_angles_[i]);
+                msg->angular.z * yaw_vel_scale_ * base_radius * std::sin(wheel_angles_[i]);
 
     drive_vels[i] = std::hypot(vx, vy) / wheel_radius_;
 
@@ -108,6 +127,32 @@ void FourWheelSteerController::cmd_vel_callback(const geometry_msgs::msg::Twist:
 
   drive_cmd_pub_->publish(drive_cmd);
   steer_cmd_pub_->publish(steer_cmd);
+}
+
+void FourWheelSteerController::check_cmd_vel_timeout()
+{
+  auto elapsed = (this->now() - last_cmd_vel_time_).seconds();
+  if (elapsed > cmd_vel_timeout_sec_ && !cmd_vel_timed_out_) {
+    cmd_vel_timed_out_ = true;
+    RCLCPP_WARN(this->get_logger(),
+      "cmd_vel タイムアウト (%.2f 秒無受信)。ゼロ速度を送信します。", elapsed);
+    send_zero_command();
+  }
+}
+
+void FourWheelSteerController::send_zero_command()
+{
+  std_msgs::msg::Float64MultiArray drive_cmd;
+  drive_cmd.data = {0.0, 0.0, 0.0, 0.0};
+  drive_cmd_pub_->publish(drive_cmd);
+
+  std_msgs::msg::Float64MultiArray steer_cmd;
+  steer_cmd.data = {0.0, 0.0, 0.0, 0.0};
+  steer_cmd_pub_->publish(steer_cmd);
+
+  current_cmd_vel_ = geometry_msgs::msg::Twist();
+  current_drive_vels_.fill(0.0);
+  current_steer_angles_.fill(0.0);
 }
 
 void FourWheelSteerController::publish_odom()
@@ -162,9 +207,9 @@ void FourWheelSteerController::publish_odom()
 
   sensor_msgs::msg::JointState js;
   js.header.stamp = current_time;
-  js.name = {"drive_left_forward_joint", "drive_right_forward_joint", "drive_left_backward_joint",
-    "drive_right_backward_joint", "steer_left_forward_joint", "steer_right_forward_joint",
-    "steer_left_backward_joint", "steer_right_backward_joint"};
+  js.name = {"drive_left_forward_joint",   "drive_right_forward_joint", "drive_left_backward_joint",
+             "drive_right_backward_joint", "steer_left_forward_joint",  "steer_right_forward_joint",
+             "steer_left_backward_joint",  "steer_right_backward_joint"};
 
   js.position.resize(8);
   js.velocity.resize(8);

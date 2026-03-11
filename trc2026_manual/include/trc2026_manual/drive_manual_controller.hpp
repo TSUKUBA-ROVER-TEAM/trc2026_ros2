@@ -5,6 +5,8 @@
 
 #include "geometry_msgs/msg/twist.hpp"
 
+#include <chrono>
+
 namespace trc2026_manual
 {
 class DriveManualController : public BaseManualController
@@ -27,13 +29,25 @@ private:
    */
   void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg) override;
 
-  // パブリッシャ
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_publisher_;
 
-  // ジョイスティック軸インデックス
+  rclcpp::TimerBase::SharedPtr publish_timer_;
+
+  rclcpp::Time last_joy_time_;
+
+  double joy_timeout_sec_;
+
+  geometry_msgs::msg::Twist last_cmd_vel_;
+
+
   int axis_linear_x_;
   int axis_linear_y_;
   int axis_angular_z_;
+
+  /*
+   * @brief 定期送信タイマーコールバック
+   */
+  void publish_timer_callback();
 };
 
 }  // namespace trc2026_manual
