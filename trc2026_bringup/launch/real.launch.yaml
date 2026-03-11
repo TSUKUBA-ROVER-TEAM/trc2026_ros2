@@ -67,7 +67,7 @@ launch:
         - name: "baud"
           value: 9600
         - name: "frame_id"
-          value: "base_link"
+          value: "gps_link"
         - name: "time_ref_source"
           value: "gps"
         - name: "use_RMC"
