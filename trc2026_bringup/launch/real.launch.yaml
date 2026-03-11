@@ -29,6 +29,13 @@ launch:
       exec: "four_wheel_steer_controller_node"
       name: "four_wheel_steer_controller"
       output: "screen"
+      param:
+        - name: "publish_joint_states"
+          value: false
+        - name: "publish_odom"
+          value: false
+        - name: "publish_odom_tf"
+          value: false
 
   - node:
       pkg: "micro_ros_agent"
@@ -41,6 +48,17 @@ launch:
       pkg: "trc2026_manual"
       exec: "drive_manual_controller_node"
       output: "screen"
+      remap:
+        - from: "/cmd_vel"
+          to: "/cmd_vel_manual"
+
+  - node:
+      pkg: "twist_mux"
+      exec: "twist_mux"
+      name: "twist_mux"
+      output: "screen"
+      param:
+        - from: "$(find-pkg-share trc2026_bringup)/config/twist_mux.yaml"
 
   - node:
       pkg: "joy"
@@ -60,6 +78,7 @@ launch:
       pkg: "nmea_navsat_driver"
       exec: "nmea_serial_driver"
       name: "nmea_serial_driver"
+      namespace: "gps"
       output: "screen"
       param:
         - name: "port"
@@ -91,7 +110,7 @@ launch:
         - name: "use_mag"
           value: false
         - name: "publish_tf"
-          value: true
+          value: false
         - name: "world_frame"
           value: "map"
       remap:

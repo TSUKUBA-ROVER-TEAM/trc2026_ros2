@@ -14,6 +14,7 @@
   <exec_depend>imu_filter_madgwick</exec_depend>
   <exec_depend>nav2_lifecycle_manager</exec_depend>
   <exec_depend>rviz_imu_plugin</exec_depend>
+  <exec_depend>twist_mux</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

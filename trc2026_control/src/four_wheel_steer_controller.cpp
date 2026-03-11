@@ -23,6 +23,8 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   this->declare_parameter<double>("y_vel_scale", 1.0);
   this->declare_parameter<double>("yaw_vel_scale", 1.0);
   this->declare_parameter<bool>("publish_joint_states", true);
+  this->declare_parameter<bool>("publish_odom", true);
+  this->declare_parameter<bool>("publish_odom_tf", true);
 
   this->get_parameter("base_width", base_width_);
   this->get_parameter("base_length", base_length_);
@@ -32,6 +34,8 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   this->get_parameter("y_vel_scale", y_vel_scale_);
   this->get_parameter("yaw_vel_scale", yaw_vel_scale_);
   this->get_parameter("publish_joint_states", publish_joint_states_);
+  this->get_parameter("publish_odom", publish_odom_);
+  this->get_parameter("publish_odom_tf", publish_odom_tf_);
 
   wheel_angles_[0] = std::atan2(base_length_ / 2.0, -base_width_ / 2.0);
   wheel_angles_[1] = std::atan2(base_length_ / 2.0, base_width_ / 2.0);
@@ -47,8 +51,12 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   steer_cmd_pub_ =
     this->create_publisher<std_msgs::msg::Float64MultiArray>("steer_controller/commands", 10);
 
-  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
-  odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
+  if (publish_odom_tf_) {
+    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+  }
+  if (publish_odom_) {
+    odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
+  }
   joint_state_pub_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
 
   auto odom_period = std::chrono::milliseconds(20);
@@ -142,7 +150,9 @@ void FourWheelSteerController::publish_odom()
   t.transform.rotation.z = q.z();
   t.transform.rotation.w = q.w();
 
-  tf_broadcaster_->sendTransform(t);
+  if (publish_odom_tf_ && tf_broadcaster_) {
+    tf_broadcaster_->sendTransform(t);
+  }
 
   nav_msgs::msg::Odometry odom;
   odom.header.stamp = current_time;
@@ -158,7 +168,9 @@ void FourWheelSteerController::publish_odom()
   odom.twist.twist.linear.y = vy;
   odom.twist.twist.angular.z = vth;
 
-  odom_pub_->publish(odom);
+  if (publish_odom_ && odom_pub_) {
+    odom_pub_->publish(odom);
+  }
 
   sensor_msgs::msg::JointState js;
   js.header.stamp = current_time;
