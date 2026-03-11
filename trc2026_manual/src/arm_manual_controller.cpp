@@ -15,6 +15,7 @@ ArmManualController::ArmManualController(const rclcpp::NodeOptions & options)
   this->declare_parameter("button_indices", std::vector<int64_t>{0, 1, 2, 3});
   this->declare_parameter("axis_indices", std::vector<int64_t>{7, 7, 7, 7});
   this->declare_parameter("joint_jog_scale", 0.2);
+  this->declare_parameter("j1_scale", 8.0);
   this->declare_parameter("hand_scale", 10.0);
   this->declare_parameter("deadzone", 0.01);
 
@@ -22,6 +23,7 @@ ArmManualController::ArmManualController(const rclcpp::NodeOptions & options)
   this->get_parameter("button_indices", button_indices_);
   this->get_parameter("axis_indices", axis_indices_);
   this->get_parameter("joint_jog_scale", joint_jog_scale_);
+  this->get_parameter("j1_scale", j1_scale_);
   this->get_parameter("hand_scale", hand_scale_);
   this->get_parameter("deadzone", deadzone_);
 
@@ -66,6 +68,11 @@ void ArmManualController::joy_callback(const sensor_msgs::msg::Joy::SharedPtr ms
     arm_cmd_msg->data[0] = -hand_scale_;
   } else {
     arm_cmd_msg->data[0] = 0.0;
+  }
+  if (msg->axes.size() > 6 && msg->buttons.size() > 6 && msg->buttons[0]) {
+    arm_cmd_msg->data[1] = msg->axes[axis_indices_[0]] * j1_scale_;
+  } else {
+    arm_cmd_msg->data[1] = 0.0;
   }
   arm_command_publisher_->publish(*arm_cmd_msg);
 }

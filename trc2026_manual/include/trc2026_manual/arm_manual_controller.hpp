@@ -37,6 +37,7 @@ private:
   std::vector<int64_t> button_indices_;
   std::vector<int64_t> axis_indices_;
   double joint_jog_scale_ = 0.01;
+  double j1_scale_ = 0.01;
   double hand_scale_ = 10.0;
   double deadzone_ = 0.05;
 };
