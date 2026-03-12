@@ -30,6 +30,8 @@ ArmManualController::ArmManualController(const rclcpp::NodeOptions & options)
   this->get_parameter("hand_scale", hand_scale_);
   this->get_parameter("deadzone", deadzone_);
 
+  last_science_cmd_time_ = this->now();
+
   RCLCPP_INFO(this->get_logger(), "Arm Manual Controller Node has been started.");
 }
 
@@ -79,15 +81,23 @@ void ArmManualController::joy_callback(const sensor_msgs::msg::Joy::SharedPtr ms
   }
   arm_command_publisher_->publish(*arm_cmd_msg);
 
-  auto science_cmd_msg = std::make_shared<std_msgs::msg::Int16>();
+  int16_t current_science_cmd = 0;
   if (msg->buttons.size() > 6 && msg->buttons[6]) {
-    science_cmd_msg->data = static_cast<int16_t>(science_command_scale_);
+    current_science_cmd = static_cast<int16_t>(science_command_scale_);
   } else if (msg->buttons.size() > 7 && msg->buttons[7]) {
-    science_cmd_msg->data = static_cast<int16_t>(-science_command_scale_);
-  } else {
-    science_cmd_msg->data = 0;
+    current_science_cmd = static_cast<int16_t>(-science_command_scale_);
   }
-  science_command_publisher_->publish(*science_cmd_msg);
+
+  auto now = this->now();
+  // 値が変化したか、前回の送信から0.1秒(10Hz)以上経過していれば送信
+  if (current_science_cmd != last_science_cmd_ || (now - last_science_cmd_time_).seconds() > 0.1) {
+    auto science_cmd_msg = std::make_shared<std_msgs::msg::Int16>();
+    science_cmd_msg->data = current_science_cmd;
+    science_command_publisher_->publish(*science_cmd_msg);
+    
+    last_science_cmd_ = current_science_cmd;
+    last_science_cmd_time_ = now;
+  }
 }
 }  // namespace trc2026_manual
 
