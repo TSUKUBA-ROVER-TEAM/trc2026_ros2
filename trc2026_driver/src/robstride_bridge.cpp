@@ -13,6 +13,7 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
   this->declare_parameter("motor_models", std::vector<std::string>{});
   this->declare_parameter("motor_velocity_limits", std::vector<double>{});
   this->declare_parameter("motor_torque_limits", std::vector<double>{});
+  this->declare_parameter("motor_current_limits", std::vector<double>{});
   this->declare_parameter("host_id", 0xFF);
   this->declare_parameter("gravity_comp_k2a", 0.0);
   this->declare_parameter("gravity_comp_k2b", 0.0);
@@ -23,6 +24,7 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
   auto models = this->get_parameter("motor_models").as_string_array();
   auto motor_velocity_limits = this->get_parameter("motor_velocity_limits").as_double_array();
   auto motor_torque_limits = this->get_parameter("motor_torque_limits").as_double_array();
+  auto motor_current_limits = this->get_parameter("motor_current_limits").as_double_array();
 
   this->declare_parameter("kp_gains", std::vector<double>{});
   this->declare_parameter("kd_gains", std::vector<double>{});
@@ -33,6 +35,7 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
   this->declare_parameter("timeout_limit", 0.5);
   this->declare_parameter("torque_limit", 12.0);
   this->declare_parameter("velocity_limit", 30.0);
+  this->declare_parameter("current_limit", 20.0);
 
   host_id_ = this->get_parameter("host_id").as_int();
   gravity_comp_k2a_ = this->get_parameter("gravity_comp_k2a").as_double();
@@ -42,6 +45,7 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
   timeout_limit_ = this->get_parameter("timeout_limit").as_double();
   torque_limit_ = this->get_parameter("torque_limit").as_double();
   velocity_limit_ = this->get_parameter("velocity_limit").as_double();
+  current_limit_ = this->get_parameter("current_limit").as_double();
 
   for (size_t i = 0; i < std::min(names.size(), ids.size()); ++i) {
     uint8_t id = static_cast<uint8_t>(ids[i]);
@@ -63,16 +67,24 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
     state.velocity_limit =
       (i < motor_velocity_limits.size()) ? motor_velocity_limits[i] : velocity_limit_;
     state.torque_limit = (i < motor_torque_limits.size()) ? motor_torque_limits[i] : torque_limit_;
+    state.current_limit =
+      (i < motor_current_limits.size()) ? motor_current_limits[i] : current_limit_;
     state.velocity_limit =
       clamp_limit(state.velocity_limit, state.velocity_scale, "velocity_limit", id);
     state.torque_limit = clamp_limit(state.torque_limit, state.torque_scale, "torque_limit", id);
+    if (state.current_limit < 0.0) {
+      RCLCPP_WARN(
+        this->get_logger(), "Motor %d current_limit %.3f is invalid. Clamping to 0.", id,
+        state.current_limit);
+      state.current_limit = 0.0;
+    }
 
     RCLCPP_INFO(
       this->get_logger(),
       "Mapped joint '%s' to motor ID %d (model=%s, Kp=%.1f, Kd=%.1f, vel_limit=%.1f, "
-      "tq_limit=%.1f)",
+      "tq_limit=%.1f, cur_limit=%.1f)",
       names[i].c_str(), id, state.model.c_str(), state.kp, state.kd, state.velocity_limit,
-      state.torque_limit);
+      state.torque_limit, state.current_limit);
   }
 
   can_bus_publisher_ = this->create_publisher<trc2026_msgs::msg::Can>("to_can_bus_fd", 10);
@@ -453,11 +465,12 @@ void RobstrideBridge::try_initialize_motors()
     if (!state.limits_configured || should_retry_config) {
       send_write_limit(id, ParamID::VELOCITY_LIMIT, static_cast<float>(state.velocity_limit));
       send_write_limit(id, ParamID::TORQUE_LIMIT, static_cast<float>(state.torque_limit));
+      send_write_limit(id, ParamID::CURRENT_LIMIT, static_cast<float>(state.current_limit));
       state.limits_configured = true;
       RCLCPP_INFO(
         this->get_logger(),
-        "Motor %d limits configured (vel=%.1f, torque=%.1f) [attempt %d/5]", id,
-        state.velocity_limit, state.torque_limit, state.config_write_attempts + 1);
+        "Motor %d limits configured (vel=%.1f, torque=%.1f, current=%.1f) [attempt %d/5]", id,
+        state.velocity_limit, state.torque_limit, state.current_limit, state.config_write_attempts + 1);
     }
 
     state.last_config_write_time = this->now();

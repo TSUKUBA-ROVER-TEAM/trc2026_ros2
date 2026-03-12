@@ -37,8 +37,14 @@ robstride_bridge_node:
       - 30.0
       - 30.0
       - 30.0
+    motor_current_limits:
+      - 20.0
+      - 10.0
+      - 20.0
+      - 20.0
     torque_limit: 30.0
     velocity_limit: 30.0
+    current_limit: 20.0
     safety_threshold: 1.0
     timeout_limit: 1.0
 

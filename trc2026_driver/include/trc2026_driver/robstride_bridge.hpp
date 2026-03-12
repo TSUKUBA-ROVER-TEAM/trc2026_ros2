@@ -37,6 +37,7 @@ struct MotorState
   double kd_scale;
   double velocity_limit;
   double torque_limit;
+  double current_limit;
   bool is_active;
   bool initialized;
   bool mode_configured;
@@ -65,6 +66,7 @@ struct MotorState
     kd_scale(100.0),
     velocity_limit(30.0),
     torque_limit(12.0),
+    current_limit(20.0),
     is_active(false),
     initialized(false),
     mode_configured(false),
@@ -92,6 +94,7 @@ namespace ParamID
 constexpr uint16_t MODE = 0x7005;
 constexpr uint16_t VELOCITY_LIMIT = 0x7017;
 constexpr uint16_t TORQUE_LIMIT = 0x700B;
+constexpr uint16_t CURRENT_LIMIT = 0x7018;
 }  // namespace ParamID
 
 class RobstrideBridge : public rclcpp::Node
@@ -160,6 +163,7 @@ private:
   double timeout_limit_ = 0.5;
   double torque_limit_ = 12.0;
   double velocity_limit_ = 30.0;
+  double current_limit_ = 20.0;
 };
 
 }  // namespace trc2026_driver
