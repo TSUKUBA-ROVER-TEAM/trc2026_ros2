@@ -8,8 +8,10 @@
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trc2026_msgs/msg/can.hpp"
 
+#include <cmath>
 #include <map>
 #include <mutex>
+#include <string>
 
 namespace trc2026_driver
 {
@@ -17,6 +19,7 @@ namespace trc2026_driver
 struct MotorState
 {
   uint8_t id;
+  std::string model;
   double position;
   double velocity;
   double effort;
@@ -27,13 +30,23 @@ struct MotorState
   double target_effort;
   double kp;
   double kd;
+  double position_scale;
+  double velocity_scale;
+  double torque_scale;
+  double kp_scale;
+  double kd_scale;
+  double velocity_limit;
+  double torque_limit;
   bool is_active;
   bool initialized;
+  bool mode_configured;
+  bool limits_configured;
 
   rclcpp::Time last_update_time;
 
   MotorState()
   : id(0),
+    model("rs-03"),
     position(0),
     velocity(0),
     effort(0),
@@ -43,8 +56,17 @@ struct MotorState
     target_effort(0),
     kp(0),
     kd(0),
+    position_scale(4.0 * M_PI),
+    velocity_scale(50.0),
+    torque_scale(60.0),
+    kp_scale(5000.0),
+    kd_scale(100.0),
+    velocity_limit(30.0),
+    torque_limit(12.0),
     is_active(false),
     initialized(false),
+    mode_configured(false),
+    limits_configured(false),
     last_update_time(0, 0, RCL_ROS_TIME)
   {
   }
@@ -67,20 +89,6 @@ constexpr uint16_t MODE = 0x7005;
 constexpr uint16_t VELOCITY_LIMIT = 0x7017;
 constexpr uint16_t TORQUE_LIMIT = 0x700B;
 }  // namespace ParamID
-
-namespace ModelScale
-{
-constexpr double P_MIN = -4.0 * M_PI;
-constexpr double P_MAX = 4.0 * M_PI;
-constexpr double V_MIN = -50.0;
-constexpr double V_MAX = 50.0;
-constexpr double T_MIN = -60.0;
-constexpr double T_MAX = 60.0;
-constexpr double KP_MIN = 0.0;
-constexpr double KP_MAX = 5000.0;
-constexpr double KD_MIN = 0.0;
-constexpr double KD_MAX = 100.0;
-}  // namespace ModelScale
 
 class RobstrideBridge : public rclcpp::Node
 {
@@ -112,6 +120,8 @@ private:
   void publish_to_can_bus();
   void publish_joint_state();
   void try_initialize_motors();
+  void apply_motor_model(MotorState & state, const std::string & model);
+  double clamp_limit(double requested, double model_max, const char * label, uint8_t id) const;
 
   void send_enable(uint8_t id);
   void send_disable(uint8_t id);

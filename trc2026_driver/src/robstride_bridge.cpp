@@ -1,5 +1,6 @@
 #include "trc2026_driver/robstride_bridge.hpp"
 
+#include <algorithm>
 #include <cmath>
 
 namespace trc2026_driver
@@ -9,6 +10,9 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
 {
   this->declare_parameter("joint_names", std::vector<std::string>{});
   this->declare_parameter("motor_ids", std::vector<int64_t>{});
+  this->declare_parameter("motor_models", std::vector<std::string>{});
+  this->declare_parameter("motor_velocity_limits", std::vector<double>{});
+  this->declare_parameter("motor_torque_limits", std::vector<double>{});
   this->declare_parameter("host_id", 0xFF);
   this->declare_parameter("gravity_comp_k2a", 0.0);
   this->declare_parameter("gravity_comp_k2b", 0.0);
@@ -16,6 +20,9 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
 
   auto names = this->get_parameter("joint_names").as_string_array();
   auto ids = this->get_parameter("motor_ids").as_integer_array();
+  auto models = this->get_parameter("motor_models").as_string_array();
+  auto motor_velocity_limits = this->get_parameter("motor_velocity_limits").as_double_array();
+  auto motor_torque_limits = this->get_parameter("motor_torque_limits").as_double_array();
 
   this->declare_parameter("kp_gains", std::vector<double>{});
   this->declare_parameter("kd_gains", std::vector<double>{});
@@ -44,13 +51,25 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
     state.id = id;
     state.is_active = false;
     state.initialized = false;
+    state.mode_configured = false;
+    state.limits_configured = false;
+
+    const std::string model = (i < models.size()) ? models[i] : "rs-03";
+    apply_motor_model(state, model);
 
     state.kp = (i < kps.size()) ? kps[i] : 30.0;
     state.kd = (i < kds.size()) ? kds[i] : 0.5;
+    state.velocity_limit =
+      (i < motor_velocity_limits.size()) ? motor_velocity_limits[i] : velocity_limit_;
+    state.torque_limit = (i < motor_torque_limits.size()) ? motor_torque_limits[i] : torque_limit_;
+    state.velocity_limit = clamp_limit(state.velocity_limit, state.velocity_scale, "velocity_limit", id);
+    state.torque_limit = clamp_limit(state.torque_limit, state.torque_scale, "torque_limit", id);
 
     RCLCPP_INFO(
-      this->get_logger(), "Mapped joint '%s' to motor ID %d (Kp=%.1f, Kd=%.1f)", names[i].c_str(),
-      id, state.kp, state.kd);
+      this->get_logger(),
+      "Mapped joint '%s' to motor ID %d (model=%s, Kp=%.1f, Kd=%.1f, vel_limit=%.1f, tq_limit=%.1f)",
+      names[i].c_str(), id, state.model.c_str(), state.kp, state.kd, state.velocity_limit,
+      state.torque_limit);
   }
 
   can_bus_publisher_ = this->create_publisher<trc2026_msgs::msg::Can>("to_can_bus_fd", 10);
@@ -75,6 +94,75 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
     std::chrono::seconds(1), std::bind(&RobstrideBridge::try_initialize_motors, this));
 
   RCLCPP_INFO(this->get_logger(), "Robstride Bridge Node has been started.");
+}
+
+void RobstrideBridge::apply_motor_model(MotorState & state, const std::string & model)
+{
+  state.model = model;
+  state.position_scale = 4.0 * M_PI;
+  state.velocity_scale = 50.0;
+  state.torque_scale = 60.0;
+  state.kp_scale = 5000.0;
+  state.kd_scale = 100.0;
+
+  if (model == "rs-00") {
+    state.velocity_scale = 50.0;
+    state.torque_scale = 17.0;
+    state.kp_scale = 500.0;
+    state.kd_scale = 5.0;
+  } else if (model == "rs-01") {
+    state.velocity_scale = 44.0;
+    state.torque_scale = 17.0;
+    state.kp_scale = 500.0;
+    state.kd_scale = 5.0;
+  } else if (model == "rs-02") {
+    state.velocity_scale = 44.0;
+    state.torque_scale = 17.0;
+    state.kp_scale = 500.0;
+    state.kd_scale = 5.0;
+  } else if (model == "rs-03") {
+    state.velocity_scale = 50.0;
+    state.torque_scale = 60.0;
+    state.kp_scale = 5000.0;
+    state.kd_scale = 100.0;
+  } else if (model == "rs-04") {
+    state.velocity_scale = 15.0;
+    state.torque_scale = 120.0;
+    state.kp_scale = 5000.0;
+    state.kd_scale = 100.0;
+  } else if (model == "rs-05") {
+    state.velocity_scale = 33.0;
+    state.torque_scale = 17.0;
+    state.kp_scale = 500.0;
+    state.kd_scale = 5.0;
+  } else if (model == "rs-06") {
+    state.velocity_scale = 20.0;
+    state.torque_scale = 60.0;
+    state.kp_scale = 5000.0;
+    state.kd_scale = 100.0;
+  } else {
+    RCLCPP_WARN(
+      this->get_logger(), "Unknown motor model '%s'. Falling back to rs-03 scales.",
+      model.c_str());
+    state.model = "rs-03";
+  }
+}
+
+double RobstrideBridge::clamp_limit(
+  double requested, double model_max, const char * label, uint8_t id) const
+{
+  if (requested > model_max) {
+    RCLCPP_WARN(
+      this->get_logger(), "Motor %d %s %.3f exceeds model max %.3f. Clamping.", id, label,
+      requested, model_max);
+    return model_max;
+  }
+  if (requested < 0.0) {
+    RCLCPP_WARN(
+      this->get_logger(), "Motor %d %s %.3f is invalid. Clamping to 0.", id, label, requested);
+    return 0.0;
+  }
+  return requested;
 }
 
 RobstrideBridge::~RobstrideBridge()
@@ -109,23 +197,24 @@ void RobstrideBridge::from_can_bus_callback(const trc2026_msgs::msg::Can::Shared
   state.is_active = true;
   state.last_update_time = this->now();
 
-  if (!state.initialized) {
-    state.target_position = state.position;
-    state.initialized = true;
-    RCLCPP_INFO(
-      this->get_logger(), "Motor ID %d status received (Sync Pos: %.3f)", motor_id, state.position);
-  }
-
   if (msg->data.size() >= 8) {
     uint16_t pos_raw = (msg->data[0] << 8) | msg->data[1];
     uint16_t vel_raw = (msg->data[2] << 8) | msg->data[3];
     uint16_t tq_raw = (msg->data[4] << 8) | msg->data[5];
     uint16_t temp_raw = (msg->data[6] << 8) | msg->data[7];
 
-    state.position = uint_to_float(pos_raw, ModelScale::P_MIN, ModelScale::P_MAX, 16);
-    state.velocity = uint_to_float(vel_raw, ModelScale::V_MIN, ModelScale::V_MAX, 16);
-    state.effort = uint_to_float(tq_raw, ModelScale::T_MIN, ModelScale::T_MAX, 16);
+    state.position = uint_to_float(pos_raw, -state.position_scale, state.position_scale, 16);
+    state.velocity = uint_to_float(vel_raw, -state.velocity_scale, state.velocity_scale, 16);
+    state.effort = uint_to_float(tq_raw, -state.torque_scale, state.torque_scale, 16);
     state.temperature = (double)temp_raw / 10.0;
+
+    if (!state.initialized) {
+      state.target_position = state.position;
+      state.initialized = true;
+      RCLCPP_INFO(
+        this->get_logger(), "Motor ID %d status received (model=%s, sync_pos=%.3f)", motor_id,
+        state.model.c_str(), state.position);
+    }
 
     uint16_t status_bits = (msg->id >> 16) & 0xFF;
     if (status_bits > 0) {
@@ -212,6 +301,9 @@ void RobstrideBridge::publish_to_can_bus()
       if (state.initialized) {
         RCLCPP_WARN(this->get_logger(), "Motor %d communication timeout. Offlining.", id);
         state.initialized = false;
+        state.is_active = false;
+        state.mode_configured = false;
+        state.limits_configured = false;
       }
       continue;
     }
@@ -230,6 +322,8 @@ void RobstrideBridge::publish_to_can_bus()
     if (std::abs(state.target_velocity) > 1e-6) {
       state.target_position += state.target_velocity * 0.01;
     }
+
+    state.target_velocity = std::clamp(state.target_velocity, -state.velocity_limit, state.velocity_limit);
 
     // Jump Prevention
     if (std::abs(state.target_position - state.position) > safety_threshold_) {
@@ -255,13 +349,15 @@ void RobstrideBridge::publish_to_can_bus()
     can_msg.data.resize(8);
 
     uint16_t pos_u16 =
-      float_to_uint(state.target_position, ModelScale::P_MIN, ModelScale::P_MAX, 16);
+      float_to_uint(state.target_position, -state.position_scale, state.position_scale, 16);
     uint16_t vel_u16 =
-      float_to_uint(state.target_velocity, ModelScale::V_MIN, ModelScale::V_MAX, 16);
-    uint16_t kp_u16 = float_to_uint(state.kp, ModelScale::KP_MIN, ModelScale::KP_MAX, 16);
-    uint16_t kd_u16 = float_to_uint(state.kd, ModelScale::KD_MIN, ModelScale::KD_MAX, 16);
+      float_to_uint(state.target_velocity, -state.velocity_scale, state.velocity_scale, 16);
+    uint16_t kp_u16 = float_to_uint(state.kp, 0.0, state.kp_scale, 16);
+    uint16_t kd_u16 = float_to_uint(state.kd, 0.0, state.kd_scale, 16);
+    double target_torque = std::clamp(
+      state.target_effort + gravity_comp, -state.torque_limit, state.torque_limit);
     uint16_t torque_u16 =
-      float_to_uint(state.target_effort + gravity_comp, ModelScale::T_MIN, ModelScale::T_MAX, 16);
+      float_to_uint(target_torque, -state.torque_scale, state.torque_scale, 16);
 
     can_msg.id = (1 << 24) | (torque_u16 << 8) | id;
 
@@ -302,13 +398,25 @@ void RobstrideBridge::publish_joint_state()
 void RobstrideBridge::try_initialize_motors()
 {
   std::lock_guard<std::mutex> lock(motor_states_mutex_);
-  for (auto const & [id, state] : motor_states_) {
-    send_enable(id);
+  for (auto & [id, state] : motor_states_) {
+    if (!state.is_active || !state.initialized) {
+      send_enable(id);
+      continue;
+    }
 
-    if (state.initialized) {
+    if (!state.mode_configured) {
       send_set_mode(id, 0);
-      send_write_limit(id, ParamID::VELOCITY_LIMIT, static_cast<float>(velocity_limit_));
-      send_write_limit(id, ParamID::TORQUE_LIMIT, static_cast<float>(torque_limit_));
+      state.mode_configured = true;
+      RCLCPP_INFO(this->get_logger(), "Motor %d mode set to MIT (0)", id);
+    }
+
+    if (!state.limits_configured) {
+      send_write_limit(id, ParamID::VELOCITY_LIMIT, static_cast<float>(state.velocity_limit));
+      send_write_limit(id, ParamID::TORQUE_LIMIT, static_cast<float>(state.torque_limit));
+      state.limits_configured = true;
+      RCLCPP_INFO(
+        this->get_logger(), "Motor %d limits configured (vel=%.1f, torque=%.1f)", id,
+        state.velocity_limit, state.torque_limit);
     }
   }
 }
