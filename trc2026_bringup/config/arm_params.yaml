@@ -10,6 +10,9 @@ robstride_bridge_node:
       - 2
       - 3
       - 4
+    motor_models:
+      - rs-03
+      - rs-04
     kp_gains:
       - 30.0
       - 50.0
@@ -24,8 +27,24 @@ robstride_bridge_node:
     gravity_comp_k2a: 0.0
     gravity_comp_k2b: 0.0
     gravity_comp_k3: 0.0
+    motor_velocity_limits:
+      - 30.0
+      - 15.0
+      - 30.0
+      - 30.0
+    motor_torque_limits:
+      - 30.0
+      - 30.0
+      - 30.0
+      - 30.0
+    motor_current_limits:
+      - 20.0
+      - 20.0
+      - 20.0
+      - 20.0
     torque_limit: 30.0
     velocity_limit: 30.0
+    current_limit: 20.0
     safety_threshold: 1.0
     timeout_limit: 1.0
 
