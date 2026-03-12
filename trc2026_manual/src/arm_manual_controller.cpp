@@ -8,6 +8,11 @@ ArmManualController::ArmManualController(const rclcpp::NodeOptions & options)
   joint_jog_publisher_ = this->create_publisher<control_msgs::msg::JointJog>("/joint_jog", 10);
   arm_command_publisher_ =
     this->create_publisher<std_msgs::msg::Float64MultiArray>("/arm_controller/commands", 10);
+  arm_limit_switch_subscriber_ =
+    this->create_subscription<std_msgs::msg::Bool>("/arm_controller/limit_switch", 10,
+      [this](const std_msgs::msg::Bool::SharedPtr msg) {
+        arm_limit_reached_ = msg->data;
+      });
   science_command_publisher_ = this->create_publisher<std_msgs::msg::Int16>("/science/command", 10);
 
   this->declare_parameter(
@@ -67,7 +72,7 @@ void ArmManualController::joy_callback(const sensor_msgs::msg::Joy::SharedPtr ms
 
   auto arm_cmd_msg = std::make_shared<std_msgs::msg::Float64MultiArray>();
   arm_cmd_msg->data.resize(2, 0.0);
-  if (msg->buttons.size() > 4 && msg->buttons[4]) {
+  if (msg->buttons.size() > 4 && msg->buttons[4] && !arm_limit_reached_) {
     arm_cmd_msg->data[0] = hand_scale_;
   } else if (msg->buttons.size() > 5 && msg->buttons[5]) {
     arm_cmd_msg->data[0] = -hand_scale_;
