@@ -41,8 +41,10 @@ struct MotorState
   bool initialized;
   bool mode_configured;
   bool limits_configured;
+  int config_write_attempts;
 
   rclcpp::Time last_update_time;
+  rclcpp::Time last_config_write_time;
 
   MotorState()
   : id(0),
@@ -67,7 +69,9 @@ struct MotorState
     initialized(false),
     mode_configured(false),
     limits_configured(false),
-    last_update_time(0, 0, RCL_ROS_TIME)
+    config_write_attempts(0),
+    last_update_time(0, 0, RCL_ROS_TIME),
+    last_config_write_time(0, 0, RCL_ROS_TIME)
   {
   }
 };

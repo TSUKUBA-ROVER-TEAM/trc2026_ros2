@@ -53,6 +53,7 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
     state.initialized = false;
     state.mode_configured = false;
     state.limits_configured = false;
+    state.config_write_attempts = 0;
 
     const std::string model = (i < models.size()) ? models[i] : "rs-03";
     apply_motor_model(state, model);
@@ -62,12 +63,14 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
     state.velocity_limit =
       (i < motor_velocity_limits.size()) ? motor_velocity_limits[i] : velocity_limit_;
     state.torque_limit = (i < motor_torque_limits.size()) ? motor_torque_limits[i] : torque_limit_;
-    state.velocity_limit = clamp_limit(state.velocity_limit, state.velocity_scale, "velocity_limit", id);
+    state.velocity_limit =
+      clamp_limit(state.velocity_limit, state.velocity_scale, "velocity_limit", id);
     state.torque_limit = clamp_limit(state.torque_limit, state.torque_scale, "torque_limit", id);
 
     RCLCPP_INFO(
       this->get_logger(),
-      "Mapped joint '%s' to motor ID %d (model=%s, Kp=%.1f, Kd=%.1f, vel_limit=%.1f, tq_limit=%.1f)",
+      "Mapped joint '%s' to motor ID %d (model=%s, Kp=%.1f, Kd=%.1f, vel_limit=%.1f, "
+      "tq_limit=%.1f)",
       names[i].c_str(), id, state.model.c_str(), state.kp, state.kd, state.velocity_limit,
       state.torque_limit);
   }
@@ -142,8 +145,7 @@ void RobstrideBridge::apply_motor_model(MotorState & state, const std::string & 
     state.kd_scale = 100.0;
   } else {
     RCLCPP_WARN(
-      this->get_logger(), "Unknown motor model '%s'. Falling back to rs-03 scales.",
-      model.c_str());
+      this->get_logger(), "Unknown motor model '%s'. Falling back to rs-03 scales.", model.c_str());
     state.model = "rs-03";
   }
 }
@@ -177,20 +179,27 @@ RobstrideBridge::~RobstrideBridge()
 
 void RobstrideBridge::from_can_bus_callback(const trc2026_msgs::msg::Can::SharedPtr msg)
 {
-  if (!msg->is_extended) {return;}
+  if (!msg->is_extended) {
+    return;
+  }
 
   uint32_t comm_type = (msg->id >> 24) & 0x1F;
-  uint8_t motor_id = (msg->id >> 8) & 0xFF;
+  uint16_t extra_data = (msg->id >> 8) & 0xFFFF;
+  uint8_t motor_id = extra_data & 0xFF;
   uint8_t target_id = msg->id & 0xFF;
 
   RCLCPP_DEBUG(
     this->get_logger(), "RX: ID=0x%08X (Type=%d, Motor=%d, Target=%d)", msg->id, comm_type,
     motor_id, target_id);
 
-  if (comm_type != CommType::STATUS) {return;}
+  if (comm_type != CommType::STATUS) {
+    return;
+  }
 
   std::lock_guard<std::mutex> lock(motor_states_mutex_);
-  if (motor_states_.find(motor_id) == motor_states_.end()) {return;}
+  if (motor_states_.find(motor_id) == motor_states_.end()) {
+    return;
+  }
 
   auto & state = motor_states_[motor_id];
   state.id = motor_id;
@@ -216,12 +225,23 @@ void RobstrideBridge::from_can_bus_callback(const trc2026_msgs::msg::Can::Shared
         state.model.c_str(), state.position);
     }
 
-    uint16_t status_bits = (msg->id >> 16) & 0xFF;
-    if (status_bits > 0) {
+    uint8_t status_mode = (extra_data >> 14) & 0x03;
+    bool status_uncalibrated = ((extra_data >> 13) & 0x01) != 0;
+    bool status_stall = ((extra_data >> 12) & 0x01) != 0;
+    bool status_magnetic_encoder_fault = ((extra_data >> 11) & 0x01) != 0;
+    bool status_overtemperature = ((extra_data >> 10) & 0x01) != 0;
+    bool status_overcurrent = ((extra_data >> 9) & 0x01) != 0;
+    bool status_undervoltage = ((extra_data >> 8) & 0x01) != 0;
+
+    if (
+      status_uncalibrated || status_stall || status_magnetic_encoder_fault ||
+      status_overtemperature || status_overcurrent || status_undervoltage)
+    {
       RCLCPP_WARN_THROTTLE(
         this->get_logger(), *this->get_clock(), 1000,
-        "Motor %d Status Bits: 0x%02X (Fault=%d, OverTemp=%d, UnderVolt=%d)", motor_id, status_bits,
-        (status_bits >> 5) & 1, (status_bits >> 2) & 1, (status_bits >> 0) & 1);
+        "Motor %d status: mode=%u uncal=%d stall=%d enc_fault=%d overtemp=%d overcurrent=%d undervolt=%d",
+        motor_id, status_mode, status_uncalibrated, status_stall, status_magnetic_encoder_fault,
+        status_overtemperature, status_overcurrent, status_undervoltage);
     }
   }
 }
@@ -266,12 +286,16 @@ void RobstrideBridge::joint_trajectory_callback(
   const trajectory_msgs::msg::JointTrajectory::SharedPtr msg)
 {
   std::lock_guard<std::mutex> lock(motor_states_mutex_);
-  if (msg->points.empty()) {return;}
+  if (msg->points.empty()) {
+    return;
+  }
 
   const auto & point = msg->points[0];
   for (size_t i = 0; i < msg->joint_names.size(); ++i) {
     const std::string & name = msg->joint_names[i];
-    if (name_to_id_.find(name) == name_to_id_.end()) {continue;}
+    if (name_to_id_.find(name) == name_to_id_.end()) {
+      continue;
+    }
 
     uint8_t id = name_to_id_[name];
     auto & state = motor_states_[id];
@@ -294,7 +318,9 @@ void RobstrideBridge::publish_to_can_bus()
   double th3 = motor_states_.count(3) ? motor_states_[3].position : 0.0;
 
   for (auto & [id, state] : motor_states_) {
-    if (!state.is_active) {continue;}
+    if (!state.is_active) {
+      continue;
+    }
 
     // Timeout Check
     if ((this->now() - state.last_update_time).seconds() > timeout_limit_) {
@@ -304,11 +330,14 @@ void RobstrideBridge::publish_to_can_bus()
         state.is_active = false;
         state.mode_configured = false;
         state.limits_configured = false;
+        state.config_write_attempts = 0;
       }
       continue;
     }
 
-    if (!state.initialized) {continue;}
+    if (!state.initialized) {
+      continue;
+    }
 
     // Jog Watchdog
     {
@@ -323,7 +352,8 @@ void RobstrideBridge::publish_to_can_bus()
       state.target_position += state.target_velocity * 0.01;
     }
 
-    state.target_velocity = std::clamp(state.target_velocity, -state.velocity_limit, state.velocity_limit);
+    state.target_velocity =
+      std::clamp(state.target_velocity, -state.velocity_limit, state.velocity_limit);
 
     // Jump Prevention
     if (std::abs(state.target_position - state.position) > safety_threshold_) {
@@ -354,10 +384,9 @@ void RobstrideBridge::publish_to_can_bus()
       float_to_uint(state.target_velocity, -state.velocity_scale, state.velocity_scale, 16);
     uint16_t kp_u16 = float_to_uint(state.kp, 0.0, state.kp_scale, 16);
     uint16_t kd_u16 = float_to_uint(state.kd, 0.0, state.kd_scale, 16);
-    double target_torque = std::clamp(
-      state.target_effort + gravity_comp, -state.torque_limit, state.torque_limit);
-    uint16_t torque_u16 =
-      float_to_uint(target_torque, -state.torque_scale, state.torque_scale, 16);
+    double target_torque =
+      std::clamp(state.target_effort + gravity_comp, -state.torque_limit, state.torque_limit);
+    uint16_t torque_u16 = float_to_uint(target_torque, -state.torque_scale, state.torque_scale, 16);
 
     can_msg.id = (1 << 24) | (torque_u16 << 8) | id;
 
@@ -404,20 +433,35 @@ void RobstrideBridge::try_initialize_motors()
       continue;
     }
 
-    if (!state.mode_configured) {
-      send_set_mode(id, 0);
-      state.mode_configured = true;
-      RCLCPP_INFO(this->get_logger(), "Motor %d mode set to MIT (0)", id);
+    const bool should_retry_config =
+      state.config_write_attempts < 5 &&
+      (state.last_config_write_time.nanoseconds() == 0 ||
+      (this->now() - state.last_config_write_time).seconds() >= 0.5);
+
+    if (!should_retry_config) {
+      continue;
     }
 
-    if (!state.limits_configured) {
+    if (!state.mode_configured || should_retry_config) {
+      send_set_mode(id, 0);
+      state.mode_configured = true;
+      RCLCPP_INFO(
+        this->get_logger(), "Motor %d mode set to MIT (0) [attempt %d/5]", id,
+        state.config_write_attempts + 1);
+    }
+
+    if (!state.limits_configured || should_retry_config) {
       send_write_limit(id, ParamID::VELOCITY_LIMIT, static_cast<float>(state.velocity_limit));
       send_write_limit(id, ParamID::TORQUE_LIMIT, static_cast<float>(state.torque_limit));
       state.limits_configured = true;
       RCLCPP_INFO(
-        this->get_logger(), "Motor %d limits configured (vel=%.1f, torque=%.1f)", id,
-        state.velocity_limit, state.torque_limit);
+        this->get_logger(),
+        "Motor %d limits configured (vel=%.1f, torque=%.1f) [attempt %d/5]", id,
+        state.velocity_limit, state.torque_limit, state.config_write_attempts + 1);
     }
+
+    state.last_config_write_time = this->now();
+    state.config_write_attempts++;
   }
 }
 
