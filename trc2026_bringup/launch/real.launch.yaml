@@ -35,7 +35,7 @@ launch:
       exec: "micro_ros_agent"
       name: "micro_ros_agent"
       output: "screen"
-      args: "serial --dev /dev/teensy_drive --baud 115200"
+      args: "serial --dev /dev/ttyACM0 --baud 115200"
 
   - node:
       pkg: "trc2026_manual"
