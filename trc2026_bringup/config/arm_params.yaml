@@ -68,3 +68,4 @@ arm_manual_controller_node:
     joint_jog_scale: 0.2
     hand_scale: 30.0
     deadzone: 0.01
+    science_command_scale: 200

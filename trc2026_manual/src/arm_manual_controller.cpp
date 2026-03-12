@@ -8,6 +8,12 @@ ArmManualController::ArmManualController(const rclcpp::NodeOptions & options)
   joint_jog_publisher_ = this->create_publisher<control_msgs::msg::JointJog>("/joint_jog", 10);
   arm_command_publisher_ =
     this->create_publisher<std_msgs::msg::Float64MultiArray>("/arm_controller/commands", 10);
+  arm_limit_switch_subscriber_ =
+    this->create_subscription<std_msgs::msg::Bool>("/arm_controller/limit_switch", 10,
+      [this](const std_msgs::msg::Bool::SharedPtr msg) {
+        arm_limit_reached_ = msg->data;
+      });
+  science_command_publisher_ = this->create_publisher<std_msgs::msg::Int16>("/science/command", 10);
 
   this->declare_parameter(
     "joint_names",
@@ -15,6 +21,7 @@ ArmManualController::ArmManualController(const rclcpp::NodeOptions & options)
   this->declare_parameter("button_indices", std::vector<int64_t>{0, 1, 2, 3});
   this->declare_parameter("axis_indices", std::vector<int64_t>{7, 7, 7, 7});
   this->declare_parameter("joint_jog_scale", 0.2);
+  this->declare_parameter("science_command_scale", 200);
   this->declare_parameter("j1_scale", 8.0);
   this->declare_parameter("hand_scale", 10.0);
   this->declare_parameter("deadzone", 0.01);
@@ -23,9 +30,12 @@ ArmManualController::ArmManualController(const rclcpp::NodeOptions & options)
   this->get_parameter("button_indices", button_indices_);
   this->get_parameter("axis_indices", axis_indices_);
   this->get_parameter("joint_jog_scale", joint_jog_scale_);
+  this->get_parameter("science_command_scale", science_command_scale_);
   this->get_parameter("j1_scale", j1_scale_);
   this->get_parameter("hand_scale", hand_scale_);
   this->get_parameter("deadzone", deadzone_);
+
+  last_science_cmd_time_ = this->now();
 
   RCLCPP_INFO(this->get_logger(), "Arm Manual Controller Node has been started.");
 }
@@ -62,7 +72,7 @@ void ArmManualController::joy_callback(const sensor_msgs::msg::Joy::SharedPtr ms
 
   auto arm_cmd_msg = std::make_shared<std_msgs::msg::Float64MultiArray>();
   arm_cmd_msg->data.resize(2, 0.0);
-  if (msg->buttons.size() > 4 && msg->buttons[4]) {
+  if (msg->buttons.size() > 4 && msg->buttons[4] && !arm_limit_reached_) {
     arm_cmd_msg->data[0] = hand_scale_;
   } else if (msg->buttons.size() > 5 && msg->buttons[5]) {
     arm_cmd_msg->data[0] = -hand_scale_;
@@ -75,6 +85,24 @@ void ArmManualController::joy_callback(const sensor_msgs::msg::Joy::SharedPtr ms
     arm_cmd_msg->data[1] = 0.0;
   }
   arm_command_publisher_->publish(*arm_cmd_msg);
+
+  int16_t current_science_cmd = 0;
+  if (msg->buttons.size() > 6 && msg->buttons[6]) {
+    current_science_cmd = static_cast<int16_t>(science_command_scale_);
+  } else if (msg->buttons.size() > 7 && msg->buttons[7]) {
+    current_science_cmd = static_cast<int16_t>(-science_command_scale_);
+  }
+
+  auto now = this->now();
+  // 値が変化したか、前回の送信から0.1秒(10Hz)以上経過していれば送信
+  if (current_science_cmd != last_science_cmd_ || (now - last_science_cmd_time_).seconds() > 0.1) {
+    auto science_cmd_msg = std::make_shared<std_msgs::msg::Int16>();
+    science_cmd_msg->data = current_science_cmd;
+    science_command_publisher_->publish(*science_cmd_msg);
+    
+    last_science_cmd_ = current_science_cmd;
+    last_science_cmd_time_ = now;
+  }
 }
 }  // namespace trc2026_manual
 
