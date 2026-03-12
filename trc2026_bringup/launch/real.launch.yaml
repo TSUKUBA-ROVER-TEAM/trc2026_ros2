@@ -40,9 +40,16 @@ launch:
   - node:
       pkg: "micro_ros_agent"
       exec: "micro_ros_agent"
-      name: "micro_ros_agent"
+      name: "teensy_drive_agent"
       output: "screen"
       args: "serial --dev /dev/teensy_drive --baud 115200"
+
+  - node:
+      pkg: "micro_ros_agent"
+      exec: "micro_ros_agent"
+      name: "teensy_science_agent"
+      output: "screen"
+      args: "serial --dev /dev/teensy_science --baud 115200"
 
   - node:
       pkg: "trc2026_manual"
