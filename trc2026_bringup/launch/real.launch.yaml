@@ -174,36 +174,28 @@ launch:
         - name: frame_id
           value: "camera_front_link"
         - name: width
-          value: 1280
+          value: 640
         - name: height
-          value: 720
+          value: 360
         - name: framerate
           value: 30
         - name: source_codec
-          value: "h264"
+          value: "mjpg"
       remap:
         - from: compressed_video
           to: /camera_front/compressed_video
 
   - node:
-      pkg: trc2026_bringup
-      exec: camera_node.py
-      name: camera_arm
+      pkg: "v4l2_camera"
+      exec: "v4l2_camera_node"
+      name: "front_camera"
+      namespace: "front_camera"
       param:
-        - name: device
+        - name: "video_device"
           value: "/dev/v4l/by-id/usb-Jieli_Technology_USB_Composite_Device-video-index0"
-        - name: frame_id
-          value: "camera_arm_link"
-        - name: width
-          value: 640
-        - name: height
-          value: 480
-        - name: framerate
-          value: 10
-        - name: source_codec
-          value: "mjpeg"
-        - name: v4l2_io_mode
-          value: "rw"
-      remap:
-        - from: compressed_video
-          to: /camera_arm/compressed_video
+        - name: "image_size"
+          value: [320, 240]
+        - name: "frame_id"
+          value: "camera_link"
+        - name: "pixel_format"
+          value: "YUYV"
