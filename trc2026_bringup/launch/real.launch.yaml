@@ -29,6 +29,9 @@ launch:
       exec: "four_wheel_steer_controller_node"
       name: "four_wheel_steer_controller"
       output: "screen"
+      remap:
+        - from: "/cmd_vel"
+          to: "/cmd_vel_out"
 
   - node:
       pkg: "micro_ros_agent"
