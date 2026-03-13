@@ -48,6 +48,27 @@ launch:
       pkg: "trc2026_manual"
       exec: "drive_manual_controller_node"
       output: "screen"
+      remap:
+        - from: "/cmd_vel"
+          to: "/cmd_vel_manual"
+      param:
+        - name: "scale_linear_x"
+          value: 0.6981
+        - name: "scale_linear_y"
+          value: 0.6981
+        - name: "scale_angular_z"
+          value: 0.6981
+
+  - node:
+      pkg: "twist_mux"
+      exec: "twist_mux"
+      name: "twist_mux"
+      output: "screen"
+      param:
+        - from: "$(find-pkg-share trc2026_bringup)/config/twist_mux.yaml"
+      remap:
+        - from: "/cmd_vel"
+          to: "/cmd_vel_out"
 
   - node:
       pkg: "joy"
@@ -142,8 +163,29 @@ launch:
       pkg: trc2026_driver
       exec: can_rx_node
       name: can_rx_node
-      
-  - executable:
-      cmd: 'bash $(find-pkg-share trc2026_bringup)/scripts/webrtc_auto_launch.sh'
-      name: 'go2rtc_server'
-      output: 'screen'
+
+  - node:
+      pkg: trc2026_bringup
+      exec: camera_node.py
+      name: camera_front
+      param:
+        - name: device
+          value: "/dev/v4l/by-id/usb-Huawei_HiCamera_12345678-video-index0"
+        - name: frame_id
+          value: "camera_front_link"
+      remap:
+        - from: compressed_video
+          to: /camera_front/compressed_video
+
+  - node:
+      pkg: trc2026_bringup
+      exec: camera_node.py
+      name: camera_arm
+      param:
+        - name: device
+          value: "/dev/v4l/by-id/usb-Jieli_Technology_USB_Composite_Device-video-index0"
+        - name: frame_id
+          value: "camera_arm_link"
+      remap:
+        - from: compressed_video
+          to: /camera_arm/compressed_video
