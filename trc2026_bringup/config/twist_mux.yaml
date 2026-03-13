@@ -9,4 +9,4 @@ twist_mux:
         topic: cmd_vel_manual
         timeout: 0.5
         priority: 100
-    locks: {}
+    use_stamped: false

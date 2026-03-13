@@ -29,13 +29,16 @@ launch:
       exec: "four_wheel_steer_controller_node"
       name: "four_wheel_steer_controller"
       output: "screen"
+      remap:
+        - from: "/cmd_vel"
+          to: "/cmd_vel_out"
       param:
         - name: "publish_joint_states"
           value: false
         - name: "publish_odom"
           value: true
         - name: "publish_odom_tf"
-          value: false
+          value: true
         - name: "gear_ratio_scale"
           value: 0.6981  # (36.0 / 19.1) * (20.0 / 54.0) = 0.6981 (M3508 + 外部減速20:54用)
 
