@@ -10,11 +10,17 @@ DriveManualController::DriveManualController(const rclcpp::NodeOptions & options
   this->declare_parameter("axis_linear_x", 4);
   this->declare_parameter("axis_linear_y", 3);
   this->declare_parameter("axis_angular_z", 0);
+  this->declare_parameter("scale_linear_x", 1.0);
+  this->declare_parameter("scale_linear_y", 1.0);
+  this->declare_parameter("scale_angular_z", 1.0);
   this->declare_parameter("joy_timeout", 0.5);
 
   this->get_parameter("axis_linear_x", axis_linear_x_);
   this->get_parameter("axis_linear_y", axis_linear_y_);
   this->get_parameter("axis_angular_z", axis_angular_z_);
+  this->get_parameter("scale_linear_x", scale_linear_x_);
+  this->get_parameter("scale_linear_y", scale_linear_y_);
+  this->get_parameter("scale_angular_z", scale_angular_z_);
   this->get_parameter("joy_timeout", joy_timeout_sec_);
 
   last_joy_time_ = this->now();
@@ -32,9 +38,9 @@ void DriveManualController::joy_callback(const sensor_msgs::msg::Joy::SharedPtr 
 {
   last_joy_time_ = this->now();
 
-  last_cmd_vel_.linear.x = msg->axes[axis_linear_x_];
-  last_cmd_vel_.linear.y = msg->axes[axis_linear_y_];
-  last_cmd_vel_.angular.z = msg->axes[axis_angular_z_];
+  last_cmd_vel_.linear.x = msg->axes[axis_linear_x_] * scale_linear_x_;
+  last_cmd_vel_.linear.y = msg->axes[axis_linear_y_] * scale_linear_y_;
+  last_cmd_vel_.angular.z = msg->axes[axis_angular_z_] * scale_angular_z_;
 }
 
 void DriveManualController::publish_timer_callback()

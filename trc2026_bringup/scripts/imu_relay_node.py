@@ -2,6 +2,7 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
+from nav_msgs.msg import Odometry
 import numpy as np
 
 class ImuRelayNode(Node):
@@ -12,6 +13,11 @@ class ImuRelayNode(Node):
             Imu,
             '/imu/data_raw_orig',
             self.listener_callback,
+            10)
+        self.odom_sub = self.create_subscription(
+            Odometry,
+            '/odom',
+            self.odom_callback,
             10)
         self.publisher = self.create_publisher(Imu, '/imu/data_raw', 10)
         
@@ -26,8 +32,16 @@ class ImuRelayNode(Node):
         self.gyro_bias = np.array([0.0, 0.0, 0.0])
         self.samples_collected = 0
         self.is_calibrated = False
+        self.is_stationary = False
         
         self.get_logger().info('IMU Relay Node started. Calibrating...')
+
+    def odom_callback(self, msg):
+        # 非常に小さい閾値で静止判定
+        vx = msg.twist.twist.linear.x
+        vy = msg.twist.twist.linear.y
+        vth = msg.twist.twist.angular.z
+        self.is_stationary = (abs(vx) < 1e-6 and abs(vy) < 1e-6 and abs(vth) < 1e-6)
 
     def listener_callback(self, msg):
         if not self.is_calibrated:
@@ -47,6 +61,10 @@ class ImuRelayNode(Node):
         new_msg.angular_velocity.x -= self.gyro_bias[0]
         new_msg.angular_velocity.y -= self.gyro_bias[1]
         new_msg.angular_velocity.z -= self.gyro_bias[2]
+        
+        # 静止時は角速度を強制的に0にする（方位ドリフト防止）
+        if self.is_stationary:
+            new_msg.angular_velocity.z = 0.0
         
         # 加速度の補正 (特にZ軸の反転とスケール)
         if self.invert_z:

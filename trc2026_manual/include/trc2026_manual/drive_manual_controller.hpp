@@ -44,6 +44,10 @@ private:
   int axis_linear_y_;
   int axis_angular_z_;
 
+  double scale_linear_x_;
+  double scale_linear_y_;
+  double scale_angular_z_;
+
   /*
    * @brief 定期送信タイマーコールバック
    */

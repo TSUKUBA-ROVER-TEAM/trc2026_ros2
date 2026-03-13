@@ -46,8 +46,9 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   this->declare_parameter<double>("gear_ratio_scale", 0.6981);
   this->get_parameter("gear_ratio_scale", gear_ratio_scale_);
 
-  this->declare_parameter<double>("cmd_vel_timeout", 0.5);
-  this->get_parameter("cmd_vel_timeout", cmd_vel_timeout_sec_);
+  this->declare_parameter<double>("feedback_deadband", 0.005);
+  this->get_parameter("feedback_deadband", feedback_deadband_);
+
   last_cmd_vel_time_ = this->now();
 
   wheel_angles_[0] = std::atan2(base_length_ / 2.0, -base_width_ / 2.0);
@@ -127,7 +128,7 @@ void FourWheelSteerController::cmd_vel_callback(const geometry_msgs::msg::Twist:
     double vy = msg->linear.y * y_vel_scale_ +
                 msg->angular.z * yaw_vel_scale_ * base_radius * std::sin(wheel_angles_[i]);
 
-    drive_vels[i] = std::hypot(vx, vy) / wheel_radius_;
+    drive_vels[i] = std::hypot(vx, vy) / (wheel_radius_ * gear_ratio_scale_);
 
     double steer_angle = std::atan2(vy, vx);
 
@@ -156,10 +157,13 @@ void FourWheelSteerController::drive_feedback_callback(
   const std_msgs::msg::Float64MultiArray::SharedPtr msg)
 {
   if (msg->data.size() >= 4) {
-    actual_drive_vels_[0] = msg->data[0] * wheel_radius_ * gear_ratio_scale_ * -1.0;
-    actual_drive_vels_[1] = msg->data[1] * wheel_radius_ * gear_ratio_scale_;
-    actual_drive_vels_[2] = msg->data[2] * wheel_radius_ * gear_ratio_scale_ * -1.0;
-    actual_drive_vels_[3] = msg->data[3] * wheel_radius_ * gear_ratio_scale_;
+    auto apply_deadband = [this](double vel) {
+      return std::fabs(vel) < feedback_deadband_ ? 0.0 : vel;
+    };
+    actual_drive_vels_[0] = apply_deadband(msg->data[0] * wheel_radius_ * gear_ratio_scale_ * -1.0);
+    actual_drive_vels_[1] = apply_deadband(msg->data[1] * wheel_radius_ * gear_ratio_scale_);
+    actual_drive_vels_[2] = apply_deadband(msg->data[2] * wheel_radius_ * gear_ratio_scale_ * -1.0);
+    actual_drive_vels_[3] = apply_deadband(msg->data[3] * wheel_radius_ * gear_ratio_scale_);
   }
 }
 
@@ -317,23 +321,27 @@ void FourWheelSteerController::publish_odom()
   odom.pose.pose.position.z = 0.0;
   odom.pose.pose.orientation = t.transform.rotation;
 
-  odom.pose.covariance[0] = 0.01;
-  odom.pose.covariance[7] = 0.01;
-  odom.pose.covariance[14] = 0.01;
-  odom.pose.covariance[21] = 0.01;
-  odom.pose.covariance[28] = 0.01;
-  odom.pose.covariance[35] = 0.01;
+  bool is_stationary = (std::fabs(vx) < 1e-6 && std::fabs(vy) < 1e-6 && std::fabs(vth) < 1e-6);
+  double pos_cov = is_stationary ? 1e-9 : 0.01;
+  double twist_cov = is_stationary ? 1e-9 : 0.05;
+
+  odom.pose.covariance[0] = pos_cov;
+  odom.pose.covariance[7] = pos_cov;
+  odom.pose.covariance[14] = pos_cov;
+  odom.pose.covariance[21] = pos_cov;
+  odom.pose.covariance[28] = pos_cov;
+  odom.pose.covariance[35] = pos_cov;
 
   odom.twist.twist.linear.x = vx;
   odom.twist.twist.linear.y = vy;
   odom.twist.twist.angular.z = vth;
 
-  odom.twist.covariance[0] = 0.05;
-  odom.twist.covariance[7] = 0.05;
-  odom.twist.covariance[14] = 0.05;
-  odom.twist.covariance[21] = 0.05;
-  odom.twist.covariance[28] = 0.05;
-  odom.twist.covariance[35] = 0.05;
+  odom.twist.covariance[0] = twist_cov;
+  odom.twist.covariance[7] = twist_cov;
+  odom.twist.covariance[14] = twist_cov;
+  odom.twist.covariance[21] = twist_cov;
+  odom.twist.covariance[28] = twist_cov;
+  odom.twist.covariance[35] = twist_cov;
 
   if (publish_odom_ && odom_pub_) {
     odom_pub_->publish(odom);
