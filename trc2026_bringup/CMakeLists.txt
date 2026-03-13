@@ -20,7 +20,9 @@ install(
 )
 
 install(
-  PROGRAMS bin/go2rtc
+  PROGRAMS 
+    bin/go2rtc
+    scripts/imu_relay_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
