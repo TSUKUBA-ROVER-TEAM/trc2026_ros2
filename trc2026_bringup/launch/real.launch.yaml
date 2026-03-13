@@ -167,7 +167,7 @@ launch:
   - node:
       pkg: trc2026_bringup
       exec: camera_node.py
-      name: camera_front
+      name: camera_fukan
       param:
         - name: device
           value: "/dev/v4l/by-id/usb-Huawei_HiCamera_12345678-video-index0"
@@ -183,18 +183,33 @@ launch:
           value: "mjpg"
       remap:
         - from: compressed_video
-          to: /camera_front/compressed_video
+          to: /camera_fukan/compressed_video
 
   - node:
       pkg: "v4l2_camera"
       exec: "v4l2_camera_node"
-      name: "front_camera"
-      namespace: "front_camera"
+      name: "arm_camera"
+      namespace: "arm_camera"
       param:
         - name: "video_device"
           value: "/dev/v4l/by-id/usb-Jieli_Technology_USB_Composite_Device-video-index0"
         - name: "image_size"
           value: [320, 240]
+        - name: "frame_id"
+          value: "camera_link"
+        - name: "pixel_format"
+          value: "YUYV"
+  
+  - node:
+      pkg: "v4l2_camera"
+      exec: "v4l2_camera_node"
+      name: "science_camera"
+      namespace: "science_camera"
+      param:
+        - name: "video_device"
+          value: "/dev/v4l/by-id/usb-046d_C505e_HD_Webcam_D143AE90-video-index0"
+        - name: "image_size"
+          value: [352, 288]
         - name: "frame_id"
           value: "camera_link"
         - name: "pixel_format"
