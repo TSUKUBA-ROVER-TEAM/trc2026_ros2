@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 
-from gi.repository import Gst, GLib
+import gi
+gi.require_version('Gst', '1.0')
+from gi.repository import Gst
 import rclpy
 from rclpy.node import Node
 from foxglove_msgs.msg import CompressedVideo
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
-import gi
 import time
-
-gi.require_version('Gst', '1.0')
 
 
 class CameraNode(Node):
@@ -22,6 +21,7 @@ class CameraNode(Node):
         self.declare_parameter('bitrate', 2000)
         self.declare_parameter('frame_id', 'camera_link')
         self.declare_parameter('source_codec', 'auto')
+        self.declare_parameter('v4l2_io_mode', 'auto')
         self.declare_parameter('stats_interval_sec', 5.0)
         self.declare_parameter('no_frame_warn_sec', 3.0)
 
@@ -38,10 +38,19 @@ class CameraNode(Node):
             'frame_id').get_parameter_value().string_value
         source_codec = self.get_parameter(
             'source_codec').get_parameter_value().string_value.lower()
+        v4l2_io_mode = self.get_parameter(
+            'v4l2_io_mode').get_parameter_value().string_value.lower()
         self.stats_interval_sec = self.get_parameter(
             'stats_interval_sec').get_parameter_value().double_value
         self.no_frame_warn_sec = self.get_parameter(
             'no_frame_warn_sec').get_parameter_value().double_value
+
+        allowed_io_modes = {'auto', 'rw', 'mmap', 'userptr', 'dmabuf', 'dmabuf-import'}
+        if v4l2_io_mode not in allowed_io_modes:
+            self.get_logger().warn(
+                f"Unknown v4l2_io_mode '{v4l2_io_mode}', fallback to auto"
+            )
+            v4l2_io_mode = 'auto'
 
         if source_codec == 'auto':
             source_codec = 'h264' if (
@@ -57,6 +66,7 @@ class CameraNode(Node):
 
         self.device = device
         self.source_codec = source_codec
+        self.v4l2_io_mode = v4l2_io_mode
         self.frame_count = 0
         self.last_stats_frame_count = 0
         self.last_stats_time = time.monotonic()
@@ -68,7 +78,7 @@ class CameraNode(Node):
 
         if source_codec == 'h264':
             pipeline_str = (
-                f"v4l2src device={device} ! "
+                f"v4l2src device={device} io-mode={v4l2_io_mode} ! "
                 f"video/x-h264,width={width},height={height},framerate={framerate}/1 ! "
                 "h264parse config-interval=1 ! "
                 "video/x-h264,stream-format=byte-stream,alignment=au ! "
@@ -76,7 +86,7 @@ class CameraNode(Node):
             )
         elif source_codec == 'mjpeg':
             pipeline_str = (
-                f"v4l2src device={device} ! "
+                f"v4l2src device={device} io-mode={v4l2_io_mode} ! "
                 f"image/jpeg,width={width},height={height},framerate={framerate}/1 ! "
                 "jpegdec ! videoconvert ! queue ! "
                 f"x264enc tune=zerolatency bitrate={bitrate} speed-preset=ultrafast key-int-max={framerate} ! "
@@ -90,7 +100,7 @@ class CameraNode(Node):
                 f"Unknown source_codec '{source_codec}', fallback to mjpeg"
             )
             pipeline_str = (
-                f"v4l2src device={device} ! "
+                f"v4l2src device={device} io-mode={v4l2_io_mode} ! "
                 f"image/jpeg,width={width},height={height},framerate={framerate}/1 ! "
                 "jpegdec ! videoconvert ! queue ! "
                 f"x264enc tune=zerolatency bitrate={bitrate} speed-preset=ultrafast key-int-max={framerate} ! "
@@ -113,11 +123,13 @@ class CameraNode(Node):
         state_ret = self.pipeline.set_state(Gst.State.PLAYING)
         self.get_logger().info(
             f"camera config: device={self.device}, codec={self.source_codec}, "
-            f"size={width}x{height}, fps={framerate}, bitrate={bitrate}, state_ret={state_ret.value_nick}"
+            f"size={width}x{height}, fps={framerate}, bitrate={bitrate}, "
+            f"io_mode={self.v4l2_io_mode}, state_ret={state_ret.value_nick}"
         )
 
         self.bus_timer = self.create_timer(0.2, self.poll_gst_bus)
-        self.stats_timer = self.create_timer(self.stats_interval_sec, self.log_stats)
+        self.stats_timer = self.create_timer(
+            self.stats_interval_sec, self.log_stats)
 
     def poll_gst_bus(self):
         while True:
