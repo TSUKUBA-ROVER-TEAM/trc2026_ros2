@@ -18,7 +18,7 @@ launch:
       param:
         - name: robot_description
           value: $(command 'xacro $(find-pkg-share trc2026_description)/urdf/trc2026.xacro')
-  
+
   - node:
       pkg: joint_state_publisher
       exec: joint_state_publisher
@@ -100,7 +100,7 @@ launch:
           value: "gps"
         - name: "use_RMC"
           value: false
-  
+
   - node:
       pkg: "rt_usb_9axisimu_driver"
       exec: "rt_usb_9axisimu_driver"
@@ -127,7 +127,7 @@ launch:
           to: "/imu/data_raw"
         - from: "/imu/mag"
           to: "/imu/mag"
-    
+
   - node:
       pkg: "nav2_lifecycle_manager"
       exec: "lifecycle_manager"
@@ -158,7 +158,7 @@ launch:
       pkg: trc2026_driver
       exec: can_tx_node
       name: can_tx_node
-  
+
   - node:
       pkg: trc2026_driver
       exec: can_rx_node
