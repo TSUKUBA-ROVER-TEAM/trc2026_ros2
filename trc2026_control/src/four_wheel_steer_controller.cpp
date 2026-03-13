@@ -163,10 +163,10 @@ void FourWheelSteerController::drive_feedback_callback(
   const std_msgs::msg::Float64MultiArray::SharedPtr msg)
 {
   if (msg->data.size() >= 4) {
-    actual_drive_vels_[0] = msg->data[0] * wheel_radius_ * gear_ratio_scale_;
+    actual_drive_vels_[0] = msg->data[0] * wheel_radius_ * gear_ratio_scale_ * -1.0;
     actual_drive_vels_[1] = msg->data[1] * wheel_radius_ * gear_ratio_scale_;
     actual_drive_vels_[2] = msg->data[2] * wheel_radius_ * gear_ratio_scale_ * -1.0;
-    actual_drive_vels_[3] = msg->data[3] * wheel_radius_ * gear_ratio_scale_ * -1.0;
+    actual_drive_vels_[3] = msg->data[3] * wheel_radius_ * gear_ratio_scale_;
   }
 }
 
