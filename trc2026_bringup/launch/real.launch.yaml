@@ -38,9 +38,78 @@ launch:
         - name: "publish_odom"
           value: true
         - name: "publish_odom_tf"
-          value: true
+          value: false
         - name: "gear_ratio_scale"
           value: 0.6981 # (36.0 / 19.1) * (20.0 / 54.0) = 0.6981 (M3508 + 外部減速20:54用)
+
+  # 自己位置推定 (Local EKF)
+  - node:
+      pkg: "robot_localization"
+      exec: "ekf_node"
+      name: "ekf_filter_node_odom"
+      output: "screen"
+      param:
+        - from: "$(find-pkg-share trc2026_bringup)/config/localization.yaml"
+      remap:
+        - from: "/odometry/filtered"
+          to: "/odometry/local"
+
+  # 自己位置推定 (Global EKF)
+  - node:
+      pkg: "robot_localization"
+      exec: "ekf_node"
+      name: "ekf_filter_node_map"
+      output: "screen"
+      param:
+        - from: "$(find-pkg-share trc2026_bringup)/config/localization.yaml"
+      remap:
+        - from: "/odometry/filtered"
+          to: "/odometry/global"
+
+  # GPS座標変換
+  - node:
+      pkg: "robot_localization"
+      exec: "navsat_transform_node"
+      name: "navsat_transform"
+      output: "screen"
+      param:
+        - from: "$(find-pkg-share trc2026_bringup)/config/localization.yaml"
+      remap:
+        - from: "/imu/data"
+          to: "/imu/data"
+        - from: "/gps/fix"
+          to: "/gps/fix"
+        - from: "/odometry/filtered"
+          to: "/odometry/global"
+
+  # ウェイポイント追従
+  - node:
+      pkg: "four_wheel_steering_nav2"
+      exec: "waypoint_follower"
+      name: "waypoint_follower"
+      output: "screen"
+      param:
+        - name: "waypoints_file"
+          value: "$(find-pkg-share four_wheel_steering_nav2)/config/waypoints.yaml"
+        - name: "use_pure_pursuit"
+          value: false # 4WS制御モード
+        - name: "gps_origin_lat"
+          value: 36.111111 # localization.yaml と同期
+        - name: "gps_origin_lon"
+          value: 140.099593
+      remap:
+        - from: "/odometry/filtered"
+          to: "/odometry/global"
+
+  # ナビゲーション管理 (サービス/ステータス用)
+  - node:
+      pkg: "four_wheel_steering_nav2"
+      exec: "navigation_master"
+      name: "navigation_master"
+      output: "screen"
+      remap:
+        - from: "/odometry/filtered"
+          to: "/odometry/global"
 
   - node:
       pkg: "micro_ros_agent"
@@ -71,6 +140,9 @@ launch:
       output: "screen"
       param:
         - from: "$(find-pkg-share trc2026_bringup)/config/twist_mux.yaml"
+      remap:
+        - from: "/cmd_vel"
+          to: "/cmd_vel_out"
 
   - node:
       pkg: "joy"

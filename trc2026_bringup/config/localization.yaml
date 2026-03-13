@@ -1,0 +1,84 @@
+### Local EKF: odom -> base_footprint
+ekf_filter_node_odom:
+  ros__parameters:
+    frequency: 30.0
+    sensor_timeout: 0.1
+    two_d_mode: true
+    publish_tf: true
+    
+    map_frame: map
+    odom_frame: odom
+    base_link_frame: base_footprint
+    world_frame: odom
+
+    # IMU Data
+    imu0: '/imu/data'
+    imu0_config: [false, false, false,
+                  false, false, true, # Roll, Pitch, Yaw
+                  false, false, false,
+                  false, false, true, # dRoll, dPitch, dYaw (Angular Velocity)
+                  false, false, false]
+    imu0_relative: true
+    imu0_queue_size: 10
+
+    # Wheel Odometry
+    odom0: '/odom'
+    odom0_config: [false, false, false,
+                   false, false, false,
+                   true,  true,  false, # X, Y velocity
+                   false, false, true,  # Yaw velocity
+                   false, false, false]
+    odom0_queue_size: 10
+    odom0_relative: false
+
+### Global EKF: map -> odom
+ekf_filter_node_map:
+  ros__parameters:
+    frequency: 30.0
+    sensor_timeout: 0.1
+    two_d_mode: true
+    publish_tf: true
+    
+    map_frame: map
+    odom_frame: odom
+    base_link_frame: base_footprint
+    world_frame: map
+
+    # IMU Data
+    imu0: '/imu/data'
+    imu0_config: [false, false, false,
+                  false, false, true,
+                  false, false, false,
+                  false, false, true,
+                  false, false, false]
+    imu0_relative: true
+
+    # Wheel Odometry
+    odom0: '/odom'
+    odom0_config: [false, false, false,
+                   false, false, false,
+                   true,  true,  false,
+                   false, false, true,
+                   false, false, false]
+
+    # GPS Odometry (from navsat_transform_node)
+    odom1: '/odometry/gps'
+    odom1_config: [true,  true,  false, # X, Y position
+                   false, false, false,
+                   false, false, false,
+                   false, false, false,
+                   false, false, false]
+    odom1_relative: false
+
+navsat_transform:
+  ros__parameters:
+    frequency: 30.0
+    delay: 3.0
+    magnetic_declination_radians: 0.13 # つくば付近の磁気偏角 (rad)
+    yaw_offset: 1.570796327 # IMUの北向きが0なら PI/2
+    zero_altitude: true
+    broadcast_cartesian_transform: false
+    publish_filtered_gps: true
+    use_odometry_yaw: false
+    wait_for_datum: true
+    datum: [36.111111, 140.099593, 0.0] # 必要に応じて調整
