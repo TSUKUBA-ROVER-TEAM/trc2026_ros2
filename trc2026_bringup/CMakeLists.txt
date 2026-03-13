@@ -20,7 +20,8 @@ install(
 )
 
 install(
-  PROGRAMS bin/go2rtc
+  PROGRAMS
+    scripts/camera_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
