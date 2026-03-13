@@ -6,7 +6,8 @@ from gi.repository import Gst
 import rclpy
 from rclpy.node import Node
 from foxglove_msgs.msg import CompressedVideo
-from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+from rclpy.duration import Duration
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 import time
 
 
@@ -24,6 +25,7 @@ class CameraNode(Node):
         self.declare_parameter('v4l2_io_mode', 'auto')
         self.declare_parameter('stats_interval_sec', 5.0)
         self.declare_parameter('no_frame_warn_sec', 3.0)
+        self.declare_parameter('lifespan_ms', 100)
 
         device = self.get_parameter(
             'device').get_parameter_value().string_value
@@ -44,6 +46,8 @@ class CameraNode(Node):
             'stats_interval_sec').get_parameter_value().double_value
         self.no_frame_warn_sec = self.get_parameter(
             'no_frame_warn_sec').get_parameter_value().double_value
+        lifespan_ms = self.get_parameter(
+            'lifespan_ms').get_parameter_value().integer_value
 
         allowed_io_modes = {'auto', 'rw', 'mmap', 'userptr', 'dmabuf', 'dmabuf-import'}
         if v4l2_io_mode not in allowed_io_modes:
@@ -59,7 +63,9 @@ class CameraNode(Node):
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
             history=HistoryPolicy.KEEP_LAST,
-            depth=1
+            depth=1,
+            durability=DurabilityPolicy.VOLATILE,
+            lifespan=Duration(nanoseconds=lifespan_ms * 1_000_000),
         )
         self.publisher = self.create_publisher(
             CompressedVideo, 'compressed_video', qos_profile)
@@ -82,18 +88,18 @@ class CameraNode(Node):
                 f"video/x-h264,width={width},height={height},framerate={framerate}/1 ! "
                 "h264parse config-interval=1 ! "
                 "video/x-h264,stream-format=byte-stream,alignment=au ! "
-                "appsink name=sink emit-signals=True sync=False"
+                "appsink name=sink emit-signals=True sync=False max-buffers=1 drop=True"
             )
         elif source_codec == 'mjpeg':
             pipeline_str = (
                 f"v4l2src device={device} io-mode={v4l2_io_mode} ! "
                 f"image/jpeg,width={width},height={height},framerate={framerate}/1 ! "
-                "jpegdec ! videoconvert ! queue ! "
+                "jpegdec ! videoconvert ! queue max-size-buffers=1 leaky=downstream ! "
                 f"x264enc tune=zerolatency bitrate={bitrate} speed-preset=ultrafast key-int-max={framerate} ! "
                 "video/x-h264,profile=baseline ! "
                 "h264parse config-interval=1 ! "
                 "video/x-h264,stream-format=byte-stream,alignment=au ! "
-                "appsink name=sink emit-signals=True sync=False"
+                "appsink name=sink emit-signals=True sync=False max-buffers=1 drop=True"
             )
         else:
             self.get_logger().warn(
@@ -102,12 +108,12 @@ class CameraNode(Node):
             pipeline_str = (
                 f"v4l2src device={device} io-mode={v4l2_io_mode} ! "
                 f"image/jpeg,width={width},height={height},framerate={framerate}/1 ! "
-                "jpegdec ! videoconvert ! queue ! "
+                "jpegdec ! videoconvert ! queue max-size-buffers=1 leaky=downstream ! "
                 f"x264enc tune=zerolatency bitrate={bitrate} speed-preset=ultrafast key-int-max={framerate} ! "
                 "video/x-h264,profile=baseline ! "
                 "h264parse config-interval=1 ! "
                 "video/x-h264,stream-format=byte-stream,alignment=au ! "
-                "appsink name=sink emit-signals=True sync=False"
+                "appsink name=sink emit-signals=True sync=False max-buffers=1 drop=True"
             )
 
         self.get_logger().info(f"Starting pipeline: {pipeline_str}")

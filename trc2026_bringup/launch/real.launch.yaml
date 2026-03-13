@@ -181,6 +181,8 @@ launch:
           value: 30
         - name: source_codec
           value: "mjpg"
+        - name: lifespan_ms
+          value: 100
       remap:
         - from: compressed_video
           to: /camera_fukan/compressed_video
@@ -199,6 +201,10 @@ launch:
           value: "camera_link"
         - name: "pixel_format"
           value: "YUYV"
+        - name: "qos_overrides./image_raw.publisher.reliability"
+          value: "best_effort"
+        - name: "qos_overrides./image_raw.publisher.depth"
+          value: 1
   
   - node:
       pkg: "v4l2_camera"
@@ -214,3 +220,7 @@ launch:
           value: "camera_link"
         - name: "pixel_format"
           value: "YUYV"
+        - name: "qos_overrides./image_raw.publisher.reliability"
+          value: "best_effort"
+        - name: "qos_overrides./image_raw.publisher.depth"
+          value: 1
