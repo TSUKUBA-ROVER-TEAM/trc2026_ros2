@@ -33,9 +33,11 @@ launch:
         - name: "publish_joint_states"
           value: false
         - name: "publish_odom"
-          value: false
+          value: true
         - name: "publish_odom_tf"
           value: false
+        - name: "gear_ratio_scale"
+          value: 0.6981  # (36.0 / 19.1) * (20.0 / 54.0) = 0.6981 (M3508 + 外部減速20:54用)
 
   - node:
       pkg: "micro_ros_agent"
@@ -91,7 +93,7 @@ launch:
         - name: "port"
           value: "/dev/gps"
         - name: "baud"
-          value: 9600
+          value: 115200
         - name: "frame_id"
           value: "gps_link"
         - name: "time_ref_source"
@@ -119,7 +121,7 @@ launch:
         - name: "publish_tf"
           value: false
         - name: "world_frame"
-          value: "map"
+          value: "enu"
       remap:
         - from: "/imu/data_raw"
           to: "/imu/data_raw"

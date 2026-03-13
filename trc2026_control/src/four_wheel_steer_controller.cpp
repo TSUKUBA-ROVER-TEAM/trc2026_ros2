@@ -19,7 +19,7 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
 
   this->declare_parameter<double>("base_width", 0.584);
   this->declare_parameter<double>("base_length", 0.8);
-  this->declare_parameter<double>("wheel_radius", 0.105);
+  this->declare_parameter<double>("wheel_radius", 0.1105);
 
   this->declare_parameter<double>("x_vel_scale", 1.0);
   this->declare_parameter<double>("y_vel_scale", 1.0);
@@ -39,6 +39,9 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   this->get_parameter("publish_odom", publish_odom_);
   this->get_parameter("publish_odom_tf", publish_odom_tf_);
 
+  this->declare_parameter<double>("gear_ratio_scale", 1.0);
+  this->get_parameter("gear_ratio_scale", gear_ratio_scale_);
+
   this->declare_parameter<double>("cmd_vel_timeout", 0.5);
   this->get_parameter("cmd_vel_timeout", cmd_vel_timeout_sec_);
   last_cmd_vel_time_ = this->now();
@@ -53,6 +56,10 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   cmd_vel_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
     "cmd_vel", sensor_qos,
     std::bind(&FourWheelSteerController::cmd_vel_callback, this, std::placeholders::_1));
+
+  drive_feedback_sub_ = this->create_subscription<std_msgs::msg::Float64MultiArray>(
+    "drive_controller/feedbacks", sensor_qos,
+    std::bind(&FourWheelSteerController::drive_feedback_callback, this, std::placeholders::_1));
 
   drive_cmd_pub_ =
     this->create_publisher<std_msgs::msg::Float64MultiArray>("drive_controller/commands", sensor_qos);
@@ -90,7 +97,6 @@ void FourWheelSteerController::cmd_vel_callback(const geometry_msgs::msg::Twist:
   last_cmd_vel_time_ = this->now();
 
   if (cmd_vel_timed_out_) {
-    RCLCPP_INFO(this->get_logger(), "cmd_vel 受信再開");
     cmd_vel_timed_out_ = false;
   }
 
@@ -137,13 +143,21 @@ void FourWheelSteerController::cmd_vel_callback(const geometry_msgs::msg::Twist:
   steer_cmd_pub_->publish(steer_cmd);
 }
 
+void FourWheelSteerController::drive_feedback_callback(const std_msgs::msg::Float64MultiArray::SharedPtr msg)
+{
+  if (msg->data.size() >= 4) {
+    actual_drive_vels_[0] = msg->data[0] * wheel_radius_ * gear_ratio_scale_;
+    actual_drive_vels_[1] = msg->data[1] * wheel_radius_ * gear_ratio_scale_;
+    actual_drive_vels_[2] = msg->data[2] * wheel_radius_ * gear_ratio_scale_ * -1.0;
+    actual_drive_vels_[3] = msg->data[3] * wheel_radius_ * gear_ratio_scale_ * -1.0;
+  }
+}
+
 void FourWheelSteerController::check_cmd_vel_timeout()
 {
   auto elapsed = (this->now() - last_cmd_vel_time_).seconds();
   if (elapsed > cmd_vel_timeout_sec_ && !cmd_vel_timed_out_) {
     cmd_vel_timed_out_ = true;
-    RCLCPP_WARN(this->get_logger(),
-      "cmd_vel タイムアウト (%.2f 秒無受信)。ゼロ速度を送信します。", elapsed);
     send_zero_command();
   }
 }
@@ -168,9 +182,26 @@ void FourWheelSteerController::publish_odom()
   rclcpp::Time current_time = this->now();
   double dt = (current_time - last_time_).seconds();
 
-  double vx = current_cmd_vel_.linear.x * x_vel_scale_;
-  double vy = current_cmd_vel_.linear.y * y_vel_scale_;
-  double vth = current_cmd_vel_.angular.z * yaw_vel_scale_;
+  double sum_vx = 0.0;
+  double sum_vy = 0.0;
+  double sum_vyaw = 0.0;
+  double base_radius = std::hypot(base_length_ / 2.0, base_width_ / 2.0);
+
+  for (size_t i = 0; i < 4; ++i) {
+    double v_wheel = actual_drive_vels_[i];
+    double steer = current_steer_angles_[i];
+
+    sum_vx += v_wheel * std::cos(steer);
+    sum_vy += v_wheel * std::sin(steer);
+
+    double wheel_angle_to_center = wheel_angles_[i];
+    double tang_vel = v_wheel * std::sin(steer - wheel_angle_to_center);
+    sum_vyaw += tang_vel / base_radius;
+  }
+
+  double vx = sum_vx / 4.0;
+  double vy = sum_vy / 4.0;
+  double vth = sum_vyaw / 4.0;
 
   double delta_x = (vx * std::cos(odom_yaw_) - vy * std::sin(odom_yaw_)) * dt;
   double delta_y = (vx * std::sin(odom_yaw_) + vy * std::cos(odom_yaw_)) * dt;
@@ -209,9 +240,23 @@ void FourWheelSteerController::publish_odom()
   odom.pose.pose.position.z = 0.0;
   odom.pose.pose.orientation = t.transform.rotation;
 
+  odom.pose.covariance[0] = 0.01;
+  odom.pose.covariance[7] = 0.01;
+  odom.pose.covariance[14] = 0.01;
+  odom.pose.covariance[21] = 0.01;
+  odom.pose.covariance[28] = 0.01;
+  odom.pose.covariance[35] = 0.01;
+
   odom.twist.twist.linear.x = vx;
   odom.twist.twist.linear.y = vy;
   odom.twist.twist.angular.z = vth;
+
+  odom.twist.covariance[0] = 0.05;
+  odom.twist.covariance[7] = 0.05;
+  odom.twist.covariance[14] = 0.05;
+  odom.twist.covariance[21] = 0.05;
+  odom.twist.covariance[28] = 0.05;
+  odom.twist.covariance[35] = 0.05;
 
   if (publish_odom_ && odom_pub_) {
     odom_pub_->publish(odom);
@@ -227,9 +272,10 @@ void FourWheelSteerController::publish_odom()
   js.velocity.resize(8);
 
   for (size_t i = 0; i < 4; ++i) {
-    wheel_positions_[i] += current_drive_vels_[i] * dt;
+    double actual_rad_sec = actual_drive_vels_[i] / wheel_radius_;
+    wheel_positions_[i] += actual_rad_sec * dt;
     js.position[i] = wheel_positions_[i];
-    js.velocity[i] = current_drive_vels_[i];
+    js.velocity[i] = actual_rad_sec;
     js.position[i + 4] = current_steer_angles_[i];
     js.velocity[i + 4] = 0.0;
   }
