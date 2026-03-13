@@ -39,12 +39,8 @@ launch:
           value: true
         - name: "publish_odom_tf"
           value: true
-        - name: "odom_use_feedback"
-          value: false
         - name: "gear_ratio_scale"
-          value: 1.0 # (36.0 / 19.1) * (20.0 / 54.0) = 0.6981 (M3508 + 外部減速20:54用)
-        - name: "command_gear_ratio_scale"
-          value: 0.5
+          value: 0.6981 # (36.0 / 19.1) * (20.0 / 54.0) = 0.6981 (M3508 + 外部減速20:54用)
 
   - node:
       pkg: "micro_ros_agent"
