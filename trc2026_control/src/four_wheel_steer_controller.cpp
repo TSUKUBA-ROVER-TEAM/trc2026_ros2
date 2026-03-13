@@ -199,28 +199,95 @@ void FourWheelSteerController::publish_odom()
   rclcpp::Time current_time = this->now();
   double dt = (current_time - last_time_).seconds();
 
-  double sum_vx = 0.0;
-  double sum_vy = 0.0;
-  double sum_vyaw = 0.0;
-  double base_radius = std::hypot(base_length_ / 2.0, base_width_ / 2.0);
+  double normal_00 = 0.0;
+  double normal_01 = 0.0;
+  double normal_02 = 0.0;
+  double normal_11 = 0.0;
+  double normal_12 = 0.0;
+  double normal_22 = 0.0;
+  double rhs_0 = 0.0;
+  double rhs_1 = 0.0;
+  double rhs_2 = 0.0;
+
+  const double base_radius = std::hypot(base_length_ / 2.0, base_width_ / 2.0);
 
   for (size_t i = 0; i < 4; ++i) {
     double v_wheel = odom_use_feedback_
                        ? actual_drive_vels_[i]
                        : current_drive_vels_[i] * wheel_radius_ * command_gear_ratio_scale_;
     double steer = current_steer_angles_[i];
+    double qx = v_wheel * std::cos(steer);
+    double qy = v_wheel * std::sin(steer);
 
-    sum_vx += v_wheel * std::cos(steer);
-    sum_vy += v_wheel * std::sin(steer);
+    double rot_x = base_radius * std::cos(wheel_angles_[i]);
+    double rot_y = base_radius * std::sin(wheel_angles_[i]);
 
-    double wheel_angle_to_center = wheel_angles_[i];
-    double tang_vel = v_wheel * std::sin(steer - wheel_angle_to_center);
-    sum_vyaw += tang_vel / base_radius;
+    normal_00 += 1.0;
+    normal_02 += rot_x;
+    normal_22 += rot_x * rot_x;
+    rhs_0 += qx;
+    rhs_2 += rot_x * qx;
+
+    normal_11 += 1.0;
+    normal_12 += rot_y;
+    normal_22 += rot_y * rot_y;
+    rhs_1 += qy;
+    rhs_2 += rot_y * qy;
   }
 
-  double vx = sum_vx / 4.0;
-  double vy = sum_vy / 4.0;
-  double vth = sum_vyaw / 4.0;
+  normal_01 = 0.0;
+
+  double m00 = normal_00;
+  double m01 = normal_01;
+  double m02 = normal_02;
+  double m10 = normal_01;
+  double m11 = normal_11;
+  double m12 = normal_12;
+  double m20 = normal_02;
+  double m21 = normal_12;
+  double m22 = normal_22;
+  double b0 = rhs_0;
+  double b1 = rhs_1;
+  double b2 = rhs_2;
+
+  const double eps = 1e-9;
+
+  if (std::fabs(m00) > eps) {
+    double f = m10 / m00;
+    m10 -= f * m00;
+    m11 -= f * m01;
+    m12 -= f * m02;
+    b1 -= f * b0;
+
+    f = m20 / m00;
+    m20 -= f * m00;
+    m21 -= f * m01;
+    m22 -= f * m02;
+    b2 -= f * b0;
+  }
+
+  if (std::fabs(m11) > eps) {
+    double f = m21 / m11;
+    m21 -= f * m11;
+    m22 -= f * m12;
+    b2 -= f * b1;
+  }
+
+  double vth = 0.0;
+  double vy = 0.0;
+  double vx = 0.0;
+
+  if (std::fabs(m22) > eps) {
+    vth = b2 / m22;
+  }
+
+  if (std::fabs(m11) > eps) {
+    vy = (b1 - m12 * vth) / m11;
+  }
+
+  if (std::fabs(m00) > eps) {
+    vx = (b0 - m01 * vy - m02 * vth) / m00;
+  }
 
   double delta_x = (vx * std::cos(odom_yaw_) - vy * std::sin(odom_yaw_)) * dt;
   double delta_y = (vx * std::sin(odom_yaw_) + vy * std::cos(odom_yaw_)) * dt;
