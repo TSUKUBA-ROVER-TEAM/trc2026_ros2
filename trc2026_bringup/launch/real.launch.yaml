@@ -179,6 +179,8 @@ launch:
           value: 720
         - name: framerate
           value: 30
+        - name: source_codec
+          value: "h264"
       remap:
         - from: compressed_video
           to: /camera_front/compressed_video
@@ -198,6 +200,8 @@ launch:
           value: 480
         - name: framerate
           value: 10
+        - name: source_codec
+          value: "mjpeg"
       remap:
         - from: compressed_video
           to: /camera_arm/compressed_video

@@ -19,6 +19,7 @@ class CameraNode(Node):
         self.declare_parameter('framerate', 30)
         self.declare_parameter('bitrate', 2000)
         self.declare_parameter('frame_id', 'camera_link')
+        self.declare_parameter('source_codec', 'auto')
         
         device = self.get_parameter('device').get_parameter_value().string_value
         width = self.get_parameter('width').get_parameter_value().integer_value
@@ -26,6 +27,10 @@ class CameraNode(Node):
         framerate = self.get_parameter('framerate').get_parameter_value().integer_value
         bitrate = self.get_parameter('bitrate').get_parameter_value().integer_value
         self.frame_id = self.get_parameter('frame_id').get_parameter_value().string_value
+        source_codec = self.get_parameter('source_codec').get_parameter_value().string_value.lower()
+
+        if source_codec == 'auto':
+            source_codec = 'h264' if ('Huawei' in device or 'HiCamera' in device) else 'mjpeg'
 
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -36,16 +41,39 @@ class CameraNode(Node):
         
         Gst.init(None)
         
-        pipeline_str = (
-            f"v4l2src device={device} ! "
-            f"image/jpeg,width={width},height={height},framerate={framerate}/1 ! "
-            "jpegdec ! videoconvert ! queue ! "
-            f"x264enc tune=zerolatency bitrate={bitrate} speed-preset=ultrafast key-int-max={framerate} ! "
-            "video/x-h264,profile=baseline ! "
-            "h264parse ! "
-            "video/x-h264,stream-format=byte-stream,alignment=au ! "
-            "appsink name=sink emit-signals=True sync=False"
-        )
+        if source_codec == 'h264':
+            pipeline_str = (
+                f"v4l2src device={device} ! "
+                f"video/x-h264,width={width},height={height},framerate={framerate}/1 ! "
+                "h264parse config-interval=1 ! "
+                "video/x-h264,stream-format=byte-stream,alignment=au ! "
+                "appsink name=sink emit-signals=True sync=False"
+            )
+        elif source_codec == 'mjpeg':
+            pipeline_str = (
+                f"v4l2src device={device} ! "
+                f"image/jpeg,width={width},height={height},framerate={framerate}/1 ! "
+                "jpegdec ! videoconvert ! queue ! "
+                f"x264enc tune=zerolatency bitrate={bitrate} speed-preset=ultrafast key-int-max={framerate} ! "
+                "video/x-h264,profile=baseline ! "
+                "h264parse config-interval=1 ! "
+                "video/x-h264,stream-format=byte-stream,alignment=au ! "
+                "appsink name=sink emit-signals=True sync=False"
+            )
+        else:
+            self.get_logger().warn(
+                f"Unknown source_codec '{source_codec}', fallback to mjpeg"
+            )
+            pipeline_str = (
+                f"v4l2src device={device} ! "
+                f"image/jpeg,width={width},height={height},framerate={framerate}/1 ! "
+                "jpegdec ! videoconvert ! queue ! "
+                f"x264enc tune=zerolatency bitrate={bitrate} speed-preset=ultrafast key-int-max={framerate} ! "
+                "video/x-h264,profile=baseline ! "
+                "h264parse config-interval=1 ! "
+                "video/x-h264,stream-format=byte-stream,alignment=au ! "
+                "appsink name=sink emit-signals=True sync=False"
+            )
             
         self.get_logger().info(f"Starting pipeline: {pipeline_str}")
         self.pipeline = Gst.parse_launch(pipeline_str)
@@ -57,6 +85,8 @@ class CameraNode(Node):
 
     def on_new_sample(self, sink):
         sample = sink.emit('pull-sample')
+        if sample is None:
+            return Gst.FlowReturn.ERROR
         buf = sample.get_buffer()
         
         success, map_info = buf.map(Gst.MapFlags.READ)
