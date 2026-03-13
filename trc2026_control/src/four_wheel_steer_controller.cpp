@@ -16,6 +16,7 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   wheel_positions_.fill(0.0);
   current_drive_vels_.fill(0.0);
   current_steer_angles_.fill(0.0);
+  actual_drive_vels_.fill(0.0);
 
   this->declare_parameter<double>("base_width", 0.584);
   this->declare_parameter<double>("base_length", 0.8);
@@ -27,6 +28,7 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   this->declare_parameter<bool>("publish_joint_states", true);
   this->declare_parameter<bool>("publish_odom", true);
   this->declare_parameter<bool>("publish_odom_tf", true);
+  this->declare_parameter<bool>("odom_use_feedback", false);
 
   this->get_parameter("base_width", base_width_);
   this->get_parameter("base_length", base_length_);
@@ -38,6 +40,7 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   this->get_parameter("publish_joint_states", publish_joint_states_);
   this->get_parameter("publish_odom", publish_odom_);
   this->get_parameter("publish_odom_tf", publish_odom_tf_);
+  this->get_parameter("odom_use_feedback", odom_use_feedback_);
 
   this->declare_parameter<double>("gear_ratio_scale", 1.0);
   this->get_parameter("gear_ratio_scale", gear_ratio_scale_);
@@ -85,6 +88,7 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
     std::bind(&FourWheelSteerController::check_cmd_vel_timeout, this));
 
   RCLCPP_INFO(this->get_logger(), "FourWheelSteerController node has been initialized. cmd_vel timeout: %.2f s", cmd_vel_timeout_sec_);
+  RCLCPP_INFO(this->get_logger(), "Odometry source: %s", odom_use_feedback_ ? "feedback" : "command");
 }
 
 FourWheelSteerController::~FourWheelSteerController()
@@ -188,7 +192,7 @@ void FourWheelSteerController::publish_odom()
   double base_radius = std::hypot(base_length_ / 2.0, base_width_ / 2.0);
 
   for (size_t i = 0; i < 4; ++i) {
-    double v_wheel = actual_drive_vels_[i];
+    double v_wheel = odom_use_feedback_ ? actual_drive_vels_[i] : current_drive_vels_[i] * wheel_radius_;
     double steer = current_steer_angles_[i];
 
     sum_vx += v_wheel * std::cos(steer);
