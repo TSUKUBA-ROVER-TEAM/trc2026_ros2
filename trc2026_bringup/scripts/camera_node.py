@@ -3,6 +3,7 @@
 import rclpy
 from rclpy.node import Node
 from foxglove_msgs.msg import CompressedVideo
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 import gi
 import numpy as np
 
@@ -29,7 +30,13 @@ class CameraNode(Node):
         bitrate = self.get_parameter('bitrate').get_parameter_value().integer_value
         self.frame_id = self.get_parameter('frame_id').get_parameter_value().string_value
 
-        self.publisher = self.create_publisher(CompressedVideo, 'compressed_video', 10)
+        # QoS設定: 映像配信に適したBest Effortを使用
+        qos_profile = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=1
+        )
+        self.publisher = self.create_publisher(CompressedVideo, 'compressed_video', qos_profile)
         
         # GStreamerの初期化
         Gst.init(None)
@@ -43,7 +50,7 @@ class CameraNode(Node):
             pipeline_str = (
                 f"v4l2src device={device} ! "
                 f"video/x-h264,width={width},height={height},framerate={framerate}/1 ! "
-                "h264parse ! "
+                "h264parse config-interval=1 ! "
                 "appsink name=sink emit-signals=True sync=False"
             )
         else:
@@ -53,7 +60,7 @@ class CameraNode(Node):
                 "decodebin ! videoconvert ! "
                 f"x264enc tune=zerolatency bitrate={bitrate} speed-preset=ultrafast key-int-max={framerate} ! "
                 "video/x-h264,profile=baseline ! "
-                "h264parse config-interval=-1 ! "
+                "h264parse config-interval=1 ! "
                 "appsink name=sink emit-signals=True sync=False"
             )
             
