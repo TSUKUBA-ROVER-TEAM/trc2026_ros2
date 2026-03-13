@@ -10,7 +10,10 @@
 namespace trc2026_control
 {
 FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & options)
-: Node("four_wheel_steer_controller_node", options), odom_x_(0.0), odom_y_(0.0), odom_yaw_(0.0),
+: Node("four_wheel_steer_controller_node", options),
+  odom_x_(0.0),
+  odom_y_(0.0),
+  odom_yaw_(0.0),
   cmd_vel_timed_out_(true)
 {
   wheel_positions_.fill(0.0);
@@ -44,6 +47,8 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
 
   this->declare_parameter<double>("gear_ratio_scale", 1.0);
   this->get_parameter("gear_ratio_scale", gear_ratio_scale_);
+  this->declare_parameter<double>("command_gear_ratio_scale", gear_ratio_scale_);
+  this->get_parameter("command_gear_ratio_scale", command_gear_ratio_scale_);
 
   this->declare_parameter<double>("cmd_vel_timeout", 0.5);
   this->get_parameter("cmd_vel_timeout", cmd_vel_timeout_sec_);
@@ -64,10 +69,10 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
     "drive_controller/feedbacks", sensor_qos,
     std::bind(&FourWheelSteerController::drive_feedback_callback, this, std::placeholders::_1));
 
-  drive_cmd_pub_ =
-    this->create_publisher<std_msgs::msg::Float64MultiArray>("drive_controller/commands", sensor_qos);
-  steer_cmd_pub_ =
-    this->create_publisher<std_msgs::msg::Float64MultiArray>("steer_controller/commands", sensor_qos);
+  drive_cmd_pub_ = this->create_publisher<std_msgs::msg::Float64MultiArray>(
+    "drive_controller/commands", sensor_qos);
+  steer_cmd_pub_ = this->create_publisher<std_msgs::msg::Float64MultiArray>(
+    "steer_controller/commands", sensor_qos);
 
   if (publish_odom_tf_) {
     tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
@@ -87,8 +92,15 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
     std::chrono::milliseconds(50),
     std::bind(&FourWheelSteerController::check_cmd_vel_timeout, this));
 
-  RCLCPP_INFO(this->get_logger(), "FourWheelSteerController node has been initialized. cmd_vel timeout: %.2f s", cmd_vel_timeout_sec_);
-  RCLCPP_INFO(this->get_logger(), "Odometry source: %s", odom_use_feedback_ ? "feedback" : "command");
+  RCLCPP_INFO(
+    this->get_logger(),
+    "FourWheelSteerController node has been initialized. cmd_vel timeout: %.2f s",
+    cmd_vel_timeout_sec_);
+  RCLCPP_INFO(
+    this->get_logger(), "Odometry source: %s", odom_use_feedback_ ? "feedback" : "command");
+  RCLCPP_INFO(
+    this->get_logger(), "Odometry scales: feedback=%.4f command=%.4f", gear_ratio_scale_,
+    command_gear_ratio_scale_);
 }
 
 FourWheelSteerController::~FourWheelSteerController()
@@ -147,7 +159,8 @@ void FourWheelSteerController::cmd_vel_callback(const geometry_msgs::msg::Twist:
   steer_cmd_pub_->publish(steer_cmd);
 }
 
-void FourWheelSteerController::drive_feedback_callback(const std_msgs::msg::Float64MultiArray::SharedPtr msg)
+void FourWheelSteerController::drive_feedback_callback(
+  const std_msgs::msg::Float64MultiArray::SharedPtr msg)
 {
   if (msg->data.size() >= 4) {
     actual_drive_vels_[0] = msg->data[0] * wheel_radius_ * gear_ratio_scale_;
@@ -192,7 +205,9 @@ void FourWheelSteerController::publish_odom()
   double base_radius = std::hypot(base_length_ / 2.0, base_width_ / 2.0);
 
   for (size_t i = 0; i < 4; ++i) {
-    double v_wheel = odom_use_feedback_ ? actual_drive_vels_[i] : current_drive_vels_[i] * wheel_radius_;
+    double v_wheel = odom_use_feedback_
+                       ? actual_drive_vels_[i]
+                       : current_drive_vels_[i] * wheel_radius_ * command_gear_ratio_scale_;
     double steer = current_steer_angles_[i];
 
     sum_vx += v_wheel * std::cos(steer);

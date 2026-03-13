@@ -58,6 +58,7 @@ private:
   double y_vel_scale_;
   double yaw_vel_scale_;
   double gear_ratio_scale_;
+  double command_gear_ratio_scale_;
 
   bool publish_joint_states_;
   bool publish_odom_;

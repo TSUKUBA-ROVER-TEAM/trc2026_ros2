@@ -18,7 +18,7 @@ launch:
       param:
         - name: robot_description
           value: $(command 'xacro $(find-pkg-share trc2026_description)/urdf/trc2026.xacro')
-  
+
   - node:
       pkg: joint_state_publisher
       exec: joint_state_publisher
@@ -40,7 +40,9 @@ launch:
         - name: "publish_odom_tf"
           value: true
         - name: "gear_ratio_scale"
-          value: 0.6981  # (36.0 / 19.1) * (20.0 / 54.0) = 0.6981 (M3508 + 外部減速20:54用)
+          value: 0.6981 # (36.0 / 19.1) * (20.0 / 54.0) = 0.6981 (M3508 + 外部減速20:54用)
+        - name: "command_gear_ratio_scale"
+          value: 0.6981
 
   - node:
       pkg: "micro_ros_agent"
@@ -103,7 +105,7 @@ launch:
           value: "gps"
         - name: "use_RMC"
           value: false
-  
+
   - node:
       pkg: "rt_usb_9axisimu_driver"
       exec: "rt_usb_9axisimu_driver"
@@ -130,7 +132,7 @@ launch:
           to: "/imu/data_raw"
         - from: "/imu/mag"
           to: "/imu/mag"
-    
+
   - node:
       pkg: "nav2_lifecycle_manager"
       exec: "lifecycle_manager"
@@ -161,13 +163,13 @@ launch:
       pkg: trc2026_driver
       exec: can_tx_node
       name: can_tx_node
-  
+
   - node:
       pkg: trc2026_driver
       exec: can_rx_node
       name: can_rx_node
-      
+
   - executable:
-      cmd: 'bash $(find-pkg-share trc2026_bringup)/scripts/webrtc_auto_launch.sh'
-      name: 'go2rtc_server'
-      output: 'screen'
+      cmd: "bash $(find-pkg-share trc2026_bringup)/scripts/webrtc_auto_launch.sh"
+      name: "go2rtc_server"
+      output: "screen"
