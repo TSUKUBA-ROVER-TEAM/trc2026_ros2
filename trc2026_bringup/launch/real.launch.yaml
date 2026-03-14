@@ -101,6 +101,50 @@ launch:
         - from: "/odometry/filtered"
           to: "/odometry/global"
 
+  # ArUcoミッションマネージャー
+  - node:
+      pkg: "four_wheel_steering_nav2"
+      exec: "aruco_mission_manager"
+      name: "aruco_mission_manager"
+      output: "screen"
+      param:
+        - name: "csv_path"
+          value: "$(find-pkg-share trc2026_bringup)/config/aruco_missions.csv"
+        - name: "gps_origin_lat"
+          value: 36.111111 # localization.yaml と同期
+        - name: "gps_origin_lon"
+          value: 140.099593
+        - name: "pass_margin"
+          value: 1.0
+        - name: "target_offset"
+          value: 2.0
+        - name: "frame_id"
+          value: "map"
+      remap:
+        - from: "/odometry/filtered"
+          to: "/odometry/global"
+
+  # ナビゲーション可視化 (Foxglove/RViz)
+  - node:
+      pkg: "four_wheel_steering_nav2"
+      exec: "navigation_visualizer"
+      name: "navigation_visualizer"
+      output: "screen"
+      param:
+        - name: "waypoints_file"
+          value: "$(find-pkg-share four_wheel_steering_nav2)/config/waypoints.yaml"
+        - name: "gps_origin_lat"
+          value: 36.111111 # localization.yaml と同期
+        - name: "gps_origin_lon"
+          value: 140.099593
+        - name: "frame_id"
+          value: "map"
+        - name: "path_length"
+          value: 1000
+      remap:
+        - from: "/odometry/filtered"
+          to: "/odometry/global"
+
   # ナビゲーション管理 (サービス/ステータス用)
   - node:
       pkg: "four_wheel_steering_nav2"
