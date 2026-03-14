@@ -90,7 +90,7 @@ launch:
       output: "screen"
       param:
         - name: "waypoints_file"
-          value: "$(find-pkg-share four_wheel_steering_nav2)/config/waypoints.yaml"
+          value: ""
         - name: "use_pure_pursuit"
           value: false # 4WS制御モード
         - name: "gps_origin_lat"
