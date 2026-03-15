@@ -64,11 +64,11 @@ ekf_filter_node_map:
     # IMU Data
     imu0: '/imu/data'
     imu0_config: [false, false, false,
-                  false, false, false,
+                  false, false, true,
                   false, false, false,
                   false, false, true,
                   false, false, false]
-    imu0_relative: true
+    imu0_relative: false
 
     # Wheel Odometry
     odom0: '/odom'
@@ -112,7 +112,7 @@ navsat_transform:
     frequency: 30.0
     delay: 3.0
     magnetic_declination_radians: 0.13 # つくば付近の磁気偏角 (rad)
-    yaw_offset: 1.570796327 # IMUの北向きが0なら PI/2
+    yaw_offset: 0.0 # ENU出力(基準が東)の場合は0.0
     zero_altitude: true
     broadcast_cartesian_transform: false
     publish_filtered_gps: true
