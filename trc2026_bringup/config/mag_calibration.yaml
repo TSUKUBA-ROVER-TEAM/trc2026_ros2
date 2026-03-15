@@ -1,0 +1,11 @@
+mag_relay_node:
+  ros__parameters:
+    input_topic: /imu/mag
+    output_topic: /imu/mag_calibrated
+    hard_iron_offset: [0.0, 0.0, 0.0]
+    soft_iron_matrix: [
+      1.0, 0.0, 0.0,
+      0.0, 1.0, 0.0,
+      0.0, 0.0, 1.0
+    ]
+    lowpass_alpha: 1.0

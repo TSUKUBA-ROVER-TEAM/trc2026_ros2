@@ -23,6 +23,9 @@ install(
   PROGRAMS 
     scripts/imu_relay_node.py
     scripts/camera_node.py
+    scripts/mag_relay_node.py
+    scripts/mag_logger_node.py
+    scripts/mag_calibrate.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
