@@ -61,6 +61,8 @@ private:
   double joy_timeout_sec_ = 5.0;
 
   std_msgs::msg::Float64MultiArray last_arm_cmd_;
+  control_msgs::msg::JointJog last_joint_jog_cmd_;
+  bool has_joint_jog_cmd_ = false;
   int16_t last_science_cmd_ = 0;
   int16_t last_published_science_cmd_ = 0;
 

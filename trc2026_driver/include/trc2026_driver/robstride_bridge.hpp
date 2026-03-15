@@ -161,6 +161,7 @@ private:
   double gravity_comp_k3_ = 0.0;
   double safety_threshold_ = 0.5;
   double timeout_limit_ = 0.5;
+  double joint_jog_timeout_limit_ = 0.2;
   double torque_limit_ = 12.0;
   double velocity_limit_ = 30.0;
   double current_limit_ = 20.0;

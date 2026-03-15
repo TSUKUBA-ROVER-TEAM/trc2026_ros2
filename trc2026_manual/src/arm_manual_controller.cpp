@@ -54,7 +54,6 @@ void ArmManualController::joy_callback(const sensor_msgs::msg::Joy::SharedPtr ms
   last_joy_time_ = this->now();
 
   auto joint_jog_msg = control_msgs::msg::JointJog();
-  joint_jog_msg.header.stamp = this->now();
   joint_jog_msg.header.frame_id = "base_footprint";
 
   for (size_t i = 0; i < joint_names_.size(); ++i) {
@@ -68,8 +67,9 @@ void ArmManualController::joy_callback(const sensor_msgs::msg::Joy::SharedPtr ms
           if (std::abs(axis_val) > deadzone_) {
             joint_jog_msg.joint_names.push_back(joint_names_[i]);
             joint_jog_msg.velocities.push_back(axis_val * joint_jog_scale_);
-            RCLCPP_INFO(
-              this->get_logger(), "Jogging joint %s with velocity %.3f", joint_names_[i].c_str(),
+            RCLCPP_DEBUG_THROTTLE(
+              this->get_logger(), *this->get_clock(), 1000,
+              "Jogging joint %s with velocity %.3f", joint_names_[i].c_str(),
               axis_val * joint_jog_scale_);
           }
         }
@@ -77,9 +77,8 @@ void ArmManualController::joy_callback(const sensor_msgs::msg::Joy::SharedPtr ms
     }
   }
 
-  if (!joint_jog_msg.joint_names.empty()) {
-    joint_jog_publisher_->publish(joint_jog_msg);
-  }
+  last_joint_jog_cmd_ = joint_jog_msg;
+  has_joint_jog_cmd_ = !joint_jog_msg.joint_names.empty();
 
   auto arm_cmd_msg = std::make_shared<std_msgs::msg::Float64MultiArray>();
   arm_cmd_msg->data.resize(2, 0.0);
@@ -119,6 +118,14 @@ void ArmManualController::publish_timer_callback()
   if (elapsed <= joy_timeout_sec_) {
     arm_cmd_msg = last_arm_cmd_;
     science_cmd = last_science_cmd_;
+
+    if (has_joint_jog_cmd_) {
+      auto joint_jog_msg = last_joint_jog_cmd_;
+      joint_jog_msg.header.stamp = now;
+      joint_jog_publisher_->publish(joint_jog_msg);
+    }
+  } else {
+    has_joint_jog_cmd_ = false;
   }
 
   arm_command_publisher_->publish(arm_cmd_msg);
