@@ -30,6 +30,11 @@ private:
    */
   void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg) override;
 
+  /*
+   * @brief 定期送信タイマーコールバック
+   */
+  void publish_timer_callback();
+
   // パブリッシャ
   rclcpp::Publisher<control_msgs::msg::JointJog>::SharedPtr joint_jog_publisher_;
   rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr arm_command_publisher_;
@@ -37,6 +42,8 @@ private:
 
   // サブスクライバ
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr arm_limit_switch_subscriber_;
+
+  rclcpp::TimerBase::SharedPtr publish_timer_;
 
   // 設定用
   std::vector<std::string> joint_names_;
@@ -50,8 +57,14 @@ private:
 
   bool arm_limit_reached_ = false;
 
-  // science/command 送信制限用
+  rclcpp::Time last_joy_time_;
+  double joy_timeout_sec_ = 5.0;
+
+  std_msgs::msg::Float64MultiArray last_arm_cmd_;
   int16_t last_science_cmd_ = 0;
+  int16_t last_published_science_cmd_ = 0;
+
+  // science/command 送信制限用
   rclcpp::Time last_science_cmd_time_;
 };
 

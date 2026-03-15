@@ -35,7 +35,7 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   this->get_parameter("yaw_vel_scale", yaw_vel_scale_);
   this->get_parameter("publish_joint_states", publish_joint_states_);
 
-  this->declare_parameter<double>("cmd_vel_timeout", 0.5);
+  this->declare_parameter<double>("cmd_vel_timeout", 1.0);
   this->get_parameter("cmd_vel_timeout", cmd_vel_timeout_sec_);
   last_cmd_vel_time_ = this->now();
 
