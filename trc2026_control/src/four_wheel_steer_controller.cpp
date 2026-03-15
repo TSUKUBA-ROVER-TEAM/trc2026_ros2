@@ -49,6 +49,8 @@ FourWheelSteerController::FourWheelSteerController(const rclcpp::NodeOptions & o
   this->declare_parameter<double>("feedback_deadband", 0.005);
   this->get_parameter("feedback_deadband", feedback_deadband_);
 
+  this->declare_parameter<double>("cmd_vel_timeout", 1.0);
+  this->get_parameter("cmd_vel_timeout", cmd_vel_timeout_sec_);
   last_cmd_vel_time_ = this->now();
 
   wheel_angles_[0] = std::atan2(base_length_ / 2.0, -base_width_ / 2.0);

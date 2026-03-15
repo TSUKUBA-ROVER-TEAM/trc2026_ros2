@@ -47,6 +47,7 @@ robstride_bridge_node:
     current_limit: 50.0
     safety_threshold: 1.0
     timeout_limit: 1.0
+    joint_jog_timeout_limit: 0.5
 
 arm_manual_controller_node:
   ros__parameters:

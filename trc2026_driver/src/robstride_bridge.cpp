@@ -33,6 +33,7 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
 
   this->declare_parameter("safety_threshold", 0.5);
   this->declare_parameter("timeout_limit", 0.5);
+  this->declare_parameter("joint_jog_timeout_limit", 0.2);
   this->declare_parameter("torque_limit", 12.0);
   this->declare_parameter("velocity_limit", 30.0);
   this->declare_parameter("current_limit", 20.0);
@@ -43,6 +44,7 @@ RobstrideBridge::RobstrideBridge(const rclcpp::NodeOptions & options)
   gravity_comp_k3_ = this->get_parameter("gravity_comp_k3").as_double();
   safety_threshold_ = this->get_parameter("safety_threshold").as_double();
   timeout_limit_ = this->get_parameter("timeout_limit").as_double();
+  joint_jog_timeout_limit_ = this->get_parameter("joint_jog_timeout_limit").as_double();
   torque_limit_ = this->get_parameter("torque_limit").as_double();
   velocity_limit_ = this->get_parameter("velocity_limit").as_double();
   current_limit_ = this->get_parameter("current_limit").as_double();
@@ -354,7 +356,7 @@ void RobstrideBridge::publish_to_can_bus()
     // Jog Watchdog
     {
       std::lock_guard<std::mutex> time_lock(last_jog_time_mutex_);
-      if ((this->now() - last_jog_time_).seconds() > 0.2) {
+      if ((this->now() - last_jog_time_).seconds() > joint_jog_timeout_limit_) {
         state.target_velocity = 0.0;
       }
     }
