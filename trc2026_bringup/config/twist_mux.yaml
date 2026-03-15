@@ -3,10 +3,10 @@ twist_mux:
     topics:
       navigation:
         topic: cmd_vel_nav
-        timeout: 0.5
+        timeout: 2.0
         priority: 10
       joystick:
         topic: cmd_vel_manual
-        timeout: 0.5
-        priority: 100
+        timeout: 2.0
+        priority: 1
     use_stamped: false

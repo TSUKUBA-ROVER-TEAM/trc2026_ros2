@@ -13,7 +13,7 @@ DriveManualController::DriveManualController(const rclcpp::NodeOptions & options
   this->declare_parameter("scale_linear_x", 1.0);
   this->declare_parameter("scale_linear_y", 1.0);
   this->declare_parameter("scale_angular_z", 1.0);
-  this->declare_parameter("joy_timeout", 0.5);
+  this->declare_parameter("joy_timeout", 5.0);
 
   this->get_parameter("axis_linear_x", axis_linear_x_);
   this->get_parameter("axis_linear_y", axis_linear_y_);

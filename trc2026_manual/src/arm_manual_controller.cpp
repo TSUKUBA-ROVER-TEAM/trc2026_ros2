@@ -25,7 +25,7 @@ ArmManualController::ArmManualController(const rclcpp::NodeOptions & options)
   this->declare_parameter("j1_scale", 8.0);
   this->declare_parameter("hand_scale", 10.0);
   this->declare_parameter("deadzone", 0.01);
-  this->declare_parameter("joy_timeout", 5.0);
+  this->declare_parameter("joy_timeout",5.0);
 
   this->get_parameter("joint_names", joint_names_);
   this->get_parameter("button_indices", button_indices_);

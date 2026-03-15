@@ -74,6 +74,8 @@ launch:
       output: "screen"
       param:
         - from: "$(find-pkg-share trc2026_bringup)/config/localization.yaml"
+        - name: "datum"
+          value: [&gps_origin_lat 36.111090833333336, &gps_origin_lon 140.09949666666665, 0.0] # 実座標はここを変更
       remap:
         - from: "/imu/data"
           to: "/imu/data"
@@ -94,12 +96,14 @@ launch:
         - name: "use_pure_pursuit"
           value: false # 4WS制御モード
         - name: "gps_origin_lat"
-          value: 36.111111 # localization.yaml と同期
+          value: *gps_origin_lat
         - name: "gps_origin_lon"
-          value: 140.099593
+          value: *gps_origin_lon
       remap:
         - from: "/odometry/filtered"
           to: "/odometry/global"
+        - from: "/cmd_vel"
+          to: "/cmd_vel_nav"
 
   # ArUcoミッションマネージャー
   - node:
@@ -111,9 +115,9 @@ launch:
         - name: "csv_path"
           value: "$(find-pkg-share trc2026_bringup)/config/aruco_missions.csv"
         - name: "gps_origin_lat"
-          value: 36.111111 # localization.yaml と同期
+          value: *gps_origin_lat
         - name: "gps_origin_lon"
-          value: 140.099593
+          value: *gps_origin_lon
         - name: "pass_margin"
           value: 1.0
         - name: "target_offset"
@@ -134,9 +138,9 @@ launch:
         - name: "waypoints_file"
           value: "$(find-pkg-share four_wheel_steering_nav2)/config/waypoints.yaml"
         - name: "gps_origin_lat"
-          value: 36.111111 # localization.yaml と同期
+          value: *gps_origin_lat
         - name: "gps_origin_lon"
-          value: 140.099593
+          value: *gps_origin_lon
         - name: "frame_id"
           value: "map"
         - name: "path_length"
@@ -257,7 +261,7 @@ launch:
       name: "imu_filter_node"
       param:
         - name: "use_mag"
-          value: false
+          value: true
         - name: "publish_tf"
           value: false
         - name: "world_frame"
