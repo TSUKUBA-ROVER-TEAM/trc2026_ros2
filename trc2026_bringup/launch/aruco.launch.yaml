@@ -1,0 +1,57 @@
+launch:
+
+# Robot Description (trc2026)
+- node:
+    pkg: robot_state_publisher
+    exec: robot_state_publisher
+    name: robot_state_publisher
+    param:
+    - name: robot_description
+      value: $(command 'xacro $(find-pkg-share trc2026_description)/urdf/trc2026.xacro')
+
+- node:
+    pkg: joint_state_publisher
+    exec: joint_state_publisher
+    name: joint_state_publisher
+
+# Azure Kinect Driver
+- include:
+    file: "$(find-pkg-share azure_kinect_ros_driver)/launch/driver.launch.py"
+    arg:
+    - name: "depth_mode"
+      value: "WFOV_2X2BINNED"
+    - name: "fps"
+      value: "5"
+    - name: "color_resolution"
+      value: "720P"
+    - name: "color_format"
+      value: "bgra"
+    - name: "overwrite_robot_description"
+      value: "false"
+
+# Image Format Conversion: BGRA -> BGR8
+# Azure Kinect outputs BGRA, but aruco_opencv requires BGR8 or Mono8.
+- node:
+    pkg: "trc2026_bringup"
+    exec: "bgra_to_bgr_converter.py"
+    name: "bgra_to_bgr_converter"
+    param:
+    - name: "input_topic"
+      value: "/rgb/image_raw"
+    - name: "output_topic"
+      value: "/rgb/image_bgr"
+
+# ArUco Marker Tracker (aruco_opencv)
+- node:
+    pkg: "aruco_opencv"
+    exec: "aruco_tracker_autostart"
+    name: "aruco_tracker"
+    param:
+    - name: "cam_base_topic"
+      value: "/rgb/image_bgr"
+    - name: "marker_dict"
+      value: "5X5_1000"
+    - name: "image_is_rectified"
+      value: true
+    - name: "marker_size"
+      value: 0.20
