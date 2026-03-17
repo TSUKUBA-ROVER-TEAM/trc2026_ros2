@@ -47,6 +47,7 @@ class MagLoggerNode(Node):
             msg.magnetic_field.z,
         ])
         self.count += 1
+        self.get_logger().info(f'Logged sample #{self.count}: {msg.magnetic_field}')
 
         if self.flush_every > 0 and self.count % self.flush_every == 0:
             self.csv_file.flush()

@@ -26,6 +26,7 @@ install(
     scripts/mag_relay_node.py
     scripts/mag_logger_node.py
     scripts/mag_calibrate.py
+    scripts/mag_calibrate_viz.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
