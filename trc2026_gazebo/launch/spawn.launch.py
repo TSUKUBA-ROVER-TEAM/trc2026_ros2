@@ -34,6 +34,7 @@ def generate_launch_description():
     world = LaunchConfiguration('world')
     use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
     use_simulator = LaunchConfiguration('use_simulator')
+    include_arm = LaunchConfiguration('include_arm')
 
     pose = {
         'x': LaunchConfiguration('x_pose', default='0.00'),
@@ -60,6 +61,11 @@ def generate_launch_description():
         'use_robot_state_pub',
         default_value='True',
         description='Whether to start the robot state publisher',
+    )
+    declare_include_arm_cmd = DeclareLaunchArgument(
+        'include_arm',
+        default_value='False',
+        description='Whether to include arm links and joints',
     )
     declare_simulator_cmd = DeclareLaunchArgument(
         'headless', default_value='False', description='Whether to execute gzclient)'
@@ -90,8 +96,12 @@ def generate_launch_description():
         namespace=namespace,
         output='screen',
         parameters=[
-            {'use_sim_time': use_sim_time,
-             'robot_description': Command(['xacro', ' ', robot_sdf])}
+            {
+                'use_sim_time': use_sim_time,
+                'robot_description': Command(
+                    ['xacro', ' ', robot_sdf, ' ', 'include_arm:=', include_arm]
+                )
+            }
         ],
         remappings=remappings,
     )
@@ -110,9 +120,12 @@ def generate_launch_description():
                 'qos_overrides./scan.subscriber.reliability': 'best_effort',
                 'qos_overrides./scan.subscriber.durability': 'volatile',
                 'qos_overrides./scan.subscriber.depth': 10,
-                'qos_overrides./imu.subscriber.reliability': 'best_effort',
-                'qos_overrides./imu.subscriber.durability': 'volatile',
-                'qos_overrides./imu.subscriber.depth': 10
+                'qos_overrides./imu/data_raw.subscriber.reliability': 'best_effort',
+                'qos_overrides./imu/data_raw.subscriber.durability': 'volatile',
+                'qos_overrides./imu/data_raw.subscriber.depth': 10,
+                'qos_overrides./gps/fix.subscriber.reliability': 'best_effort',
+                'qos_overrides./gps/fix.subscriber.durability': 'volatile',
+                'qos_overrides./gps/fix.subscriber.depth': 10
             }
         ],
         output='screen'
@@ -225,6 +238,7 @@ def generate_launch_description():
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_use_robot_state_pub_cmd)
+    ld.add_action(declare_include_arm_cmd)
     ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
     ld.add_action(declare_robot_name_cmd)

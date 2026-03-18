@@ -3,6 +3,7 @@
   xmlns:xacro="http://www.ros.org/wiki/xacro">
 
   <xacro:arg name="use_fake_hardware"            default="false" />
+  <xacro:arg name="include_arm"                  default="true" />
 
   <xacro:include filename="$(find trc2026_description)/urdf/materials.xacro" />
   <xacro:include filename="$(find trc2026_description)/urdf/trc2026.trans" />
@@ -246,6 +247,7 @@
     </collision>
   </link>
 
+  <xacro:if value="$(arg include_arm)">
   <link name="arm_1_link">
     <inertial>
       <origin xyz="0.02501726495601913 6.660115283784152e-06 0.05914041700789598" rpy="0 0 0"/>
@@ -414,8 +416,21 @@
     </collision>
   </link>
 
-  <link name="arm_3_virtual_link"/>
-  <link name="shaft_virtual_link"/>
+  <link name="arm_3_virtual_link">
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/>
+    </inertial>
+  </link>
+  <link name="shaft_virtual_link">
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/>
+    </inertial>
+  </link>
+  </xacro:if>
 
   <link name="base_scan">
     <inertial>
@@ -519,6 +534,7 @@
     <axis xyz="-0.0 1.0 -0.0"/>
   </joint>
 
+  <xacro:if value="$(arg include_arm)">
   <joint name="hand_right_joint" type="prismatic">
     <origin xyz="-0.1077 -7e-06 0.082" rpy="0 0 0"/>
     <parent link="arm_4_link"/>
@@ -596,6 +612,7 @@
     <mimic joint="arm_2_joint" multiplier="-1.0" offset="0.0"/>
   </joint>
 
+  </xacro:if>
   <joint name="imu_joint" type="fixed">
     <parent link="base_link"/>
     <child link="imu_link"/>

@@ -21,16 +21,6 @@ launch:
         description: "Whether run a SLAM"
 
   - arg:
-        name: "map"
-        default: "$(find-pkg-share trc2026_navigation)/maps/depot.yaml"
-        description: "Full path to map file to load"
-
-  - arg:
-        name: "params_file"
-        default: "$(find-pkg-share trc2026_navigation)/params/nav2_params.yaml"
-        description: "Full path to the ROS2 parameters file to use for all launched nodes"
-
-  - arg:
         name: "autostart"
         default: "true"
         description: "Automatically startup the nav2 stack"
@@ -85,6 +75,11 @@ launch:
         default: "$(find-pkg-share trc2026_description)/urdf/trc2026.xacro"
         description: "Full path to robot sdf file to spawn the robot in gazebo"
 
+  - arg:
+        name: "include_arm"
+        default: "False"
+        description: "Whether to include arm links and joints"
+
   - include:
         file: "$(find-pkg-share trc2026_gazebo)/launch/spawn.launch.py"
         arg:
@@ -95,30 +90,155 @@ launch:
           - { name: "world", value: "$(var world)" }
           - { name: "robot_name", value: "$(var robot_name)" }
           - { name: "robot_sdf", value: "$(var robot_sdf)" }
+          - { name: "include_arm", value: "$(var include_arm)" }
           - { name: "use_simulator", value: "$(var use_simulator)" }
 
   - node:
-        pkg: "trc2026_control"
-        exec: "four_wheel_steer_controller_node"
-        name: "four_wheel_steer_controller"
-        namespace: "$(var namespace)"
-        output: "screen"
-        param:
-          - { name: "use_sim_time", value: "$(var use_sim_time)" }
-          - { name: "publish_joint_states", value: false }
+      pkg: foxglove_bridge
+      exec: foxglove_bridge
+      name: foxglove_bridge
+      output: screen
+      remap:
+        - from: /joy
+          to: /joy_foxglove
+      param:
+        - name: "asset_uri_allowlist"
+          value: ["^package://.*$"]
 
-  - include:
-        file: "$(find-pkg-share trc2026_navigation)/launch/bringup_launch.py"
-        arg:
-          - { name: "namespace", value: "$(var namespace)" }
-          - { name: "use_namespace", value: "$(var use_namespace)" }
-          - { name: "slam", value: "$(var slam)" }
-          - { name: "map", value: "$(var map)" }
-          - { name: "use_sim_time", value: "$(var use_sim_time)" }
-          - { name: "params_file", value: "$(var params_file)" }
-          - { name: "autostart", value: "$(var autostart)" }
-          - { name: "use_composition", value: "$(var use_composition)" }
-          - { name: "use_respawn", value: "$(var use_respawn)" }
+  - node:
+      pkg: "trc2026_control"
+      exec: "four_wheel_steer_controller_node"
+      name: "four_wheel_steer_controller"
+      output: "screen"
+      remap:
+        - from: "/cmd_vel"
+          to: "/cmd_vel_out"
+      param:
+        - name: "publish_joint_states"
+          value: false
+        - name: "publish_odom"
+          value: true
+        - name: "publish_odom_tf"
+          value: false
+        - name: "gear_ratio_scale"
+          value: 0.6981 # (36.0 / 19.1) * (20.0 / 54.0) = 0.6981 (M3508 + 外部減速20:54用)
+
+  # 自己位置推定 (Local EKF)
+  - node:
+      pkg: "robot_localization"
+      exec: "ekf_node"
+      name: "ekf_filter_node_odom"
+      output: "screen"
+      param:
+        - from: "$(find-pkg-share trc2026_bringup)/config/localization.yaml"
+      remap:
+        - from: "/odometry/filtered"
+          to: "/odometry/local"
+
+  # 自己位置推定 (Global EKF)
+  - node:
+      pkg: "robot_localization"
+      exec: "ekf_node"
+      name: "ekf_filter_node_map"
+      output: "screen"
+      param:
+        - from: "$(find-pkg-share trc2026_bringup)/config/localization.yaml"
+      remap:
+        - from: "/odometry/filtered"
+          to: "/odometry/global"
+
+  # GPS座標変換
+  - node:
+      pkg: "robot_localization"
+      exec: "navsat_transform_node"
+      name: "navsat_transform"
+      output: "screen"
+      param:
+        - from: "$(find-pkg-share trc2026_bringup)/config/localization.yaml"
+        - name: "datum"
+          value: [&gps_origin_lat 36.111090833333336, &gps_origin_lon 140.09949666666665, 0.0] # 実座標はここを変更
+      remap:
+        - from: "/imu/data"
+          to: "/imu/data"
+        - from: "/gps/fix"
+          to: "/gps/fix"
+        - from: "/odometry/filtered"
+          to: "/odometry/global"
+
+  # ウェイポイント追従
+  - node:
+      pkg: "four_wheel_steering_nav2"
+      exec: "waypoint_follower"
+      name: "waypoint_follower"
+      output: "screen"
+      param:
+        - name: "waypoints_file"
+          value: ""
+        - name: "use_pure_pursuit"
+          value: false # 4WS制御モード
+        - name: "gps_origin_lat"
+          value: *gps_origin_lat
+        - name: "gps_origin_lon"
+          value: *gps_origin_lon
+      remap:
+        - from: "/odometry/filtered"
+          to: "/odometry/global"
+        - from: "/cmd_vel"
+          to: "/cmd_vel_nav"
+
+  # ArUcoミッションマネージャー
+  - node:
+      pkg: "four_wheel_steering_nav2"
+      exec: "aruco_mission_manager"
+      name: "aruco_mission_manager"
+      output: "screen"
+      param:
+        - name: "csv_path"
+          value: "$(find-pkg-share trc2026_bringup)/config/aruco_missions.csv"
+        - name: "gps_origin_lat"
+          value: *gps_origin_lat
+        - name: "gps_origin_lon"
+          value: *gps_origin_lon
+        - name: "pass_margin"
+          value: 1.0
+        - name: "target_offset"
+          value: 2.0
+        - name: "frame_id"
+          value: "map"
+      remap:
+        - from: "/odometry/filtered"
+          to: "/odometry/global"
+
+  # ナビゲーション可視化 (Foxglove/RViz)
+  - node:
+      pkg: "four_wheel_steering_nav2"
+      exec: "navigation_visualizer"
+      name: "navigation_visualizer"
+      output: "screen"
+      param:
+        - name: "waypoints_file"
+          value: "$(find-pkg-share four_wheel_steering_nav2)/config/waypoints.yaml"
+        - name: "gps_origin_lat"
+          value: *gps_origin_lat
+        - name: "gps_origin_lon"
+          value: *gps_origin_lon
+        - name: "frame_id"
+          value: "map"
+        - name: "path_length"
+          value: 1000
+      remap:
+        - from: "/odometry/filtered"
+          to: "/odometry/global"
+
+  # ナビゲーション管理 (サービス/ステータス用)
+  - node:
+      pkg: "four_wheel_steering_nav2"
+      exec: "navigation_master"
+      name: "navigation_master"
+      output: "screen"
+      remap:
+        - from: "/odometry/filtered"
+          to: "/odometry/global"
 
   - node:
         if: "$(var use_rviz)"
@@ -126,18 +246,37 @@ launch:
         exec: "rviz2"
         name: "rviz2"
         output: "screen"
-        args: "-d $(var rviz_config_file)"
         param:
           - { name: "use_sim_time", value: "$(var use_sim_time)" }
         remap:
           - { from: "/tf", to: "tf" }
           - { from: "/tf_static", to: "tf_static" }
+  
+  - node:
+      pkg: "twist_mux"
+      exec: "twist_mux"
+      name: "twist_mux"
+      output: "screen"
+      param:
+        - from: "$(find-pkg-share trc2026_bringup)/config/twist_mux.yaml"
+      remap:
+        - from: "/cmd_vel"
+          to: "/cmd_vel_out"
 
   - node:
-        pkg: "trc2026_manual"
-        exec: "drive_manual_controller_node"
-        name: "drive_manual_controller"
-        output: "screen"
+      pkg: "trc2026_manual"
+      exec: "drive_manual_controller_node"
+      output: "screen"
+      remap:
+        - from: "/cmd_vel"
+          to: "/cmd_vel_manual"
+      param:
+        - name: "scale_linear_x"
+          value: 0.6981
+        - name: "scale_linear_y"
+          value: 0.6981
+        - name: "scale_angular_z"
+          value: 0.6981
 
   - node:
         pkg: "joy"

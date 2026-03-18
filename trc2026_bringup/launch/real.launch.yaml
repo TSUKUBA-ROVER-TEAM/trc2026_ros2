@@ -36,7 +36,7 @@ launch:
         - name: "publish_joint_states"
           value: false
         - name: "publish_odom"
-          value: true
+          value: false
         - name: "publish_odom_tf"
           value: false
         - name: "gear_ratio_scale"
