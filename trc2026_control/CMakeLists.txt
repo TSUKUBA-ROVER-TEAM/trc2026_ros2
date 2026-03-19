@@ -72,10 +72,14 @@ rclcpp_components_register_node(aruco_mission_node_component
   EXECUTABLE aruco_mission_node
 )
 
+add_library(${PROJECT_NAME}::aruco_mission_node_component ALIAS aruco_mission_node_component)
+
 install(TARGETS 
   four_wheel_steer_controller
   aruco_mission_node_component
-  DESTINATION lib/${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
 if(BUILD_TESTING)
