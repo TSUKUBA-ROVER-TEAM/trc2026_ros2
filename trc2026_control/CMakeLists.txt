@@ -16,6 +16,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(aruco_opencv_msgs REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
@@ -60,6 +61,7 @@ target_include_directories(aruco_mission_node_component PUBLIC
 ament_target_dependencies(aruco_mission_node_component
   rclcpp
   rclcpp_components
+  ament_index_cpp
   geometry_msgs
   aruco_opencv_msgs
   tf2

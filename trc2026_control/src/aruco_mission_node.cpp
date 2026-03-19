@@ -1,13 +1,16 @@
 #include "trc2026_control/aruco_mission_node.hpp"
 
+#include "ament_index_cpp/get_package_share_directory.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
 
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <fstream>
 #include <limits>
 #include <sstream>
+#include <stdexcept>
 
 using namespace std::chrono_literals;
 
@@ -39,6 +42,10 @@ ArucoMissionNode::ArucoMissionNode(const rclcpp::NodeOptions & options)
   this->declare_parameter("control_history_action_topic", "/control_history/action");
   this->declare_parameter("control_history_result_topic", "/control_history/result");
   this->declare_parameter("control_history_checked_point_topic", "/control_history/checked_point");
+  this->declare_parameter(
+    "missions_csv_path", "");
+  this->declare_parameter("target_latitude_topic", "/control_history/target_latitude");
+  this->declare_parameter("target_longitude_topic", "/control_history/target_longitude");
 
   const auto to_long_vector = [](const std::vector<int64_t> & input) {
     std::vector<long> output;
@@ -179,11 +186,16 @@ ArucoMissionNode::ArucoMissionNode(const rclcpp::NodeOptions & options)
     this->get_parameter("control_history_result_topic").as_string();
   const auto control_history_checked_point_topic =
     this->get_parameter("control_history_checked_point_topic").as_string();
+  const auto target_latitude_topic = this->get_parameter("target_latitude_topic").as_string();
+  const auto target_longitude_topic = this->get_parameter("target_longitude_topic").as_string();
   command_pub_ = this->create_publisher<std_msgs::msg::String>(control_history_command_topic, 10);
   action_pub_ = this->create_publisher<std_msgs::msg::String>(control_history_action_topic, 10);
   result_pub_ = this->create_publisher<std_msgs::msg::String>(control_history_result_topic, 10);
   checked_point_pub_ =
     this->create_publisher<std_msgs::msg::String>(control_history_checked_point_topic, 10);
+  target_latitude_pub_ = this->create_publisher<std_msgs::msg::Float64>(target_latitude_topic, 10);
+  target_longitude_pub_ =
+    this->create_publisher<std_msgs::msg::Float64>(target_longitude_topic, 10);
   aruco_sub_ = this->create_subscription<aruco_opencv_msgs::msg::ArucoDetection>(
     "aruco_detections", 10,
     std::bind(&ArucoMissionNode::aruco_callback, this, std::placeholders::_1));
@@ -197,6 +209,20 @@ ArucoMissionNode::ArucoMissionNode(const rclcpp::NodeOptions & options)
   // Timer
   timer_ = this->create_wall_timer(100ms, std::bind(&ArucoMissionNode::control_loop, this));
   search_start_time_ = this->now();
+
+  std::string missions_csv_path = this->get_parameter("missions_csv_path").as_string();
+  if (missions_csv_path.empty()) {
+    try {
+      missions_csv_path =
+        ament_index_cpp::get_package_share_directory("trc2026_bringup") +
+        "/config/aruco_missions.csv";
+    } catch (const std::exception & e) {
+      RCLCPP_WARN(
+        this->get_logger(),
+        "Failed to resolve missions_csv_path from package share: %s", e.what());
+    }
+  }
+  load_missions_csv(missions_csv_path);
 
   if (mission_enabled_) {
     RCLCPP_INFO(
@@ -492,6 +518,78 @@ std::string ArucoMissionNode::result_string_for_state(
   return stream.str();
 }
 
+void ArucoMissionNode::load_missions_csv(const std::string & csv_path)
+{
+  marker_gps_map_.clear();
+
+  std::ifstream ifs(csv_path);
+  if (!ifs.is_open()) {
+    RCLCPP_WARN(this->get_logger(), "Failed to open missions CSV: %s", csv_path.c_str());
+    return;
+  }
+
+  std::string line;
+  if (!std::getline(ifs, line)) {
+    RCLCPP_WARN(this->get_logger(), "missions CSV is empty: %s", csv_path.c_str());
+    return;
+  }
+
+  size_t loaded = 0;
+  while (std::getline(ifs, line)) {
+    if (line.empty()) {
+      continue;
+    }
+
+    std::stringstream stream(line);
+    std::string id_str;
+    std::string pair_id_unused;
+    std::string lat_str;
+    std::string lon_str;
+
+    if (!std::getline(stream, id_str, ',')) {
+      continue;
+    }
+    if (!std::getline(stream, pair_id_unused, ',')) {
+      continue;
+    }
+    if (!std::getline(stream, lat_str, ',')) {
+      continue;
+    }
+    if (!std::getline(stream, lon_str, ',')) {
+      continue;
+    }
+
+    try {
+      const long marker_id = std::stol(id_str);
+      const double latitude = std::stod(lat_str);
+      const double longitude = std::stod(lon_str);
+      marker_gps_map_[marker_id] = std::make_pair(latitude, longitude);
+      ++loaded;
+    } catch (const std::exception &) {
+      RCLCPP_WARN(this->get_logger(), "Invalid missions CSV row skipped: %s", line.c_str());
+    }
+  }
+
+  RCLCPP_INFO(
+    this->get_logger(), "Loaded %zu marker GPS entries from %s", loaded, csv_path.c_str());
+}
+
+void ArucoMissionNode::publish_target_coordinates_for_marker(long marker_id)
+{
+  const auto it = marker_gps_map_.find(marker_id);
+  if (it == marker_gps_map_.end()) {
+    return;
+  }
+
+  std_msgs::msg::Float64 latitude_msg;
+  latitude_msg.data = it->second.first;
+  target_latitude_pub_->publish(latitude_msg);
+
+  std_msgs::msg::Float64 longitude_msg;
+  longitude_msg.data = it->second.second;
+  target_longitude_pub_->publish(longitude_msg);
+}
+
 void ArucoMissionNode::publish_control_history(
   const std::string & command, const std::string & action, const std::string & result,
   bool publish_checked_point)
@@ -612,6 +710,7 @@ void ArucoMissionNode::do_searching(geometry_msgs::msg::Twist & msg)
   if (idx >= 0) {
     current_target_marker_id_ =
       static_cast<long>(last_markers_msg_->markers[static_cast<size_t>(idx)].marker_id);
+    publish_target_coordinates_for_marker(current_target_marker_id_);
     target_lost_count_ = 0;
     RCLCPP_INFO(
       this->get_logger(), "Marker %ld selected. Switching to APPROACHING (goal_phase=%s)",

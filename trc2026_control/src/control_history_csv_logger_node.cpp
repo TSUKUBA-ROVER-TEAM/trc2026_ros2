@@ -152,6 +152,9 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
   this->declare_parameter<std::string>("action_topic", "/control_history/action");
   this->declare_parameter<std::string>("result_topic", "/control_history/result");
   this->declare_parameter<std::string>("checked_point_topic", "/control_history/checked_point");
+  this->declare_parameter<std::string>("target_latitude_topic", "/control_history/target_latitude");
+  this->declare_parameter<std::string>(
+    "target_longitude_topic", "/control_history/target_longitude");
 
   this->declare_parameter<double>("target_latitude", std::numeric_limits<double>::quiet_NaN());
   this->declare_parameter<double>("target_longitude", std::numeric_limits<double>::quiet_NaN());
@@ -191,6 +194,8 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
   const auto action_topic = this->get_parameter("action_topic").as_string();
   const auto result_topic = this->get_parameter("result_topic").as_string();
   const auto checked_point_topic = this->get_parameter("checked_point_topic").as_string();
+  const auto target_latitude_topic = this->get_parameter("target_latitude_topic").as_string();
+  const auto target_longitude_topic = this->get_parameter("target_longitude_topic").as_string();
 
   const rclcpp::QoS sensor_qos = rclcpp::SensorDataQoS();
   gps_sub_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
@@ -223,6 +228,12 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
   checked_point_sub_ = this->create_subscription<std_msgs::msg::String>(
     checked_point_topic, 10,
     std::bind(&ControlHistoryCsvLoggerNode::on_checked_point, this, std::placeholders::_1));
+  target_latitude_sub_ = this->create_subscription<std_msgs::msg::Float64>(
+    target_latitude_topic, 10,
+    std::bind(&ControlHistoryCsvLoggerNode::on_target_latitude, this, std::placeholders::_1));
+  target_longitude_sub_ = this->create_subscription<std_msgs::msg::Float64>(
+    target_longitude_topic, 10,
+    std::bind(&ControlHistoryCsvLoggerNode::on_target_longitude, this, std::placeholders::_1));
 
   last_manual_cmd_time_ = this->now() - rclcpp::Duration::from_seconds(9999.0);
 
@@ -408,6 +419,16 @@ void ControlHistoryCsvLoggerNode::on_result(const std_msgs::msg::String::SharedP
 void ControlHistoryCsvLoggerNode::on_checked_point(const std_msgs::msg::String::SharedPtr msg)
 {
   checked_point_ = msg->data;
+}
+
+void ControlHistoryCsvLoggerNode::on_target_latitude(const std_msgs::msg::Float64::SharedPtr msg)
+{
+  target_lat_ = msg->data;
+}
+
+void ControlHistoryCsvLoggerNode::on_target_longitude(const std_msgs::msg::Float64::SharedPtr msg)
+{
+  target_lon_ = msg->data;
 }
 
 void ControlHistoryCsvLoggerNode::on_timer()

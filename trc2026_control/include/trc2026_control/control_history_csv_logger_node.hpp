@@ -7,6 +7,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "sensor_msgs/msg/nav_sat_fix.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include "std_msgs/msg/float64.hpp"
 #include "std_msgs/msg/string.hpp"
 
 #include <fstream>
@@ -40,6 +41,8 @@ private:
   void on_action(const std_msgs::msg::String::SharedPtr msg);
   void on_result(const std_msgs::msg::String::SharedPtr msg);
   void on_checked_point(const std_msgs::msg::String::SharedPtr msg);
+  void on_target_latitude(const std_msgs::msg::Float64::SharedPtr msg);
+  void on_target_longitude(const std_msgs::msg::Float64::SharedPtr msg);
   void on_timer();
 
   std::ofstream csv_;
@@ -81,6 +84,8 @@ private:
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr action_sub_;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr result_sub_;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr checked_point_sub_;
+  rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr target_latitude_sub_;
+  rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr target_longitude_sub_;
   rclcpp::TimerBase::SharedPtr timer_;
 };
 

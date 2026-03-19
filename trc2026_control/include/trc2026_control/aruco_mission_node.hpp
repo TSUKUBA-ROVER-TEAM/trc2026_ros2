@@ -10,6 +10,7 @@
 #include "aruco_opencv_msgs/msg/aruco_detection.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include "std_msgs/msg/float64.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
@@ -17,6 +18,7 @@
 #include <cmath>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace trc2026_control
@@ -54,6 +56,8 @@ private:
   std::string command_string_for_state(State state, const geometry_msgs::msg::Twist & msg) const;
   std::string action_string_for_state(State state) const;
   std::string result_string_for_state(State state, const geometry_msgs::msg::Twist & msg) const;
+  void load_missions_csv(const std::string & csv_path);
+  void publish_target_coordinates_for_marker(long marker_id);
   void publish_control_history(
     const std::string & command, const std::string & action, const std::string & result,
     bool publish_checked_point);
@@ -99,6 +103,8 @@ private:
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr action_pub_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr result_pub_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr checked_point_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr target_latitude_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr target_longitude_pub_;
   rclcpp::Subscription<aruco_opencv_msgs::msg::ArucoDetection>::SharedPtr aruco_sub_;
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr start_trigger_sub_;
   aruco_opencv_msgs::msg::ArucoDetection::SharedPtr last_markers_msg_;
@@ -110,6 +116,8 @@ private:
   rclcpp::Time search_recovery_start_time_;
   rclcpp::Time turn_start_time_;
   rclcpp::Time orbit_start_time_;
+
+  std::unordered_map<long, std::pair<double, double>> marker_gps_map_;
 };
 
 }  // namespace trc2026_control
