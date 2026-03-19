@@ -74,9 +74,35 @@ rclcpp_components_register_node(aruco_mission_node_component
 
 add_library(${PROJECT_NAME}::aruco_mission_node_component ALIAS aruco_mission_node_component)
 
+add_library(control_history_csv_logger_node_component SHARED
+  src/control_history_csv_logger_node.cpp
+)
+target_include_directories(control_history_csv_logger_node_component PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+ament_target_dependencies(control_history_csv_logger_node_component
+  rclcpp
+  rclcpp_components
+  geometry_msgs
+  std_msgs
+  nav_msgs
+  sensor_msgs
+  tf2
+  tf2_geometry_msgs
+)
+
+rclcpp_components_register_node(control_history_csv_logger_node_component
+  PLUGIN "trc2026_control::ControlHistoryCsvLoggerNode"
+  EXECUTABLE control_history_csv_logger_node
+)
+
+add_library(${PROJECT_NAME}::control_history_csv_logger_node_component ALIAS control_history_csv_logger_node_component)
+
 install(TARGETS 
   four_wheel_steer_controller
   aruco_mission_node_component
+  control_history_csv_logger_node_component
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
