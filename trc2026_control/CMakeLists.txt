@@ -16,6 +16,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(aruco_opencv_msgs REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -48,11 +49,33 @@ rclcpp_components_register_node(four_wheel_steer_controller
   EXECUTABLE four_wheel_steer_controller_node
 )
 
-install(TARGETS four_wheel_steer_controller
-  DESTINATION lib
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
+# Aruco Mission Node
+add_library(aruco_mission_node_component SHARED
+  src/aruco_mission_node.cpp
+)
+target_include_directories(aruco_mission_node_component PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+ament_target_dependencies(aruco_mission_node_component
+  rclcpp
+  rclcpp_components
+  geometry_msgs
+  aruco_opencv_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+)
+
+rclcpp_components_register_node(aruco_mission_node_component
+  PLUGIN "trc2026_control::ArucoMissionNode"
+  EXECUTABLE aruco_mission_node
+)
+
+install(TARGETS 
+  four_wheel_steer_controller
+  aruco_mission_node_component
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)

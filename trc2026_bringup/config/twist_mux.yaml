@@ -1,9 +1,9 @@
 twist_mux:
   ros__parameters:
     topics:
-      navigation:
-        topic: cmd_vel_nav
-        timeout: 2.0
+      aruco_mission:
+        topic: cmd_vel_aruco
+        timeout: 0.5
         priority: 10
       joystick:
         topic: cmd_vel_manual
