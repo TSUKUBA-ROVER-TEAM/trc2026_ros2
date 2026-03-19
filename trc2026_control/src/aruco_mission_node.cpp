@@ -35,6 +35,10 @@ ArucoMissionNode::ArucoMissionNode(const rclcpp::NodeOptions & options)
   this->declare_parameter("search_recovery_duration", 1.0);
   this->declare_parameter("target_lost_cycles", 20);
   this->declare_parameter("auto_start", false);
+  this->declare_parameter("control_history_command_topic", "/control_history/command");
+  this->declare_parameter("control_history_action_topic", "/control_history/action");
+  this->declare_parameter("control_history_result_topic", "/control_history/result");
+  this->declare_parameter("control_history_checked_point_topic", "/control_history/checked_point");
 
   const auto to_long_vector = [](const std::vector<int64_t> & input) {
     std::vector<long> output;
@@ -167,6 +171,19 @@ ArucoMissionNode::ArucoMissionNode(const rclcpp::NodeOptions & options)
   // Publisher/Subscriber
   cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
   sequence_pub_ = this->create_publisher<std_msgs::msg::String>("current_sequence", 10);
+  const auto control_history_command_topic =
+    this->get_parameter("control_history_command_topic").as_string();
+  const auto control_history_action_topic =
+    this->get_parameter("control_history_action_topic").as_string();
+  const auto control_history_result_topic =
+    this->get_parameter("control_history_result_topic").as_string();
+  const auto control_history_checked_point_topic =
+    this->get_parameter("control_history_checked_point_topic").as_string();
+  command_pub_ = this->create_publisher<std_msgs::msg::String>(control_history_command_topic, 10);
+  action_pub_ = this->create_publisher<std_msgs::msg::String>(control_history_action_topic, 10);
+  result_pub_ = this->create_publisher<std_msgs::msg::String>(control_history_result_topic, 10);
+  checked_point_pub_ =
+    this->create_publisher<std_msgs::msg::String>(control_history_checked_point_topic, 10);
   aruco_sub_ = this->create_subscription<aruco_opencv_msgs::msg::ArucoDetection>(
     "aruco_detections", 10,
     std::bind(&ArucoMissionNode::aruco_callback, this, std::placeholders::_1));
@@ -326,10 +343,18 @@ std::string ArucoMissionNode::ids_to_string(const std::vector<long> & ids) const
 
 void ArucoMissionNode::finish_orbit_and_select_next()
 {
+  bool completed_marker_added = false;
   if (
     current_target_marker_id_ >= 0 &&
     !contains_id(completed_marker_ids_, static_cast<uint16_t>(current_target_marker_id_))) {
     completed_marker_ids_.push_back(current_target_marker_id_);
+    completed_marker_added = true;
+  }
+
+  if (completed_marker_added) {
+    publish_control_history(
+      "orbit completed marker=" + std::to_string(current_target_marker_id_),
+      "[NAVI] completed checkpoint marker", "[NAVI] marker checkpoint completed", true);
   }
 
   RCLCPP_INFO(
@@ -387,6 +412,109 @@ std::string ArucoMissionNode::current_sequence_string() const
   return state_to_string(state_);
 }
 
+std::string ArucoMissionNode::checked_points_string() const
+{
+  if (completed_marker_ids_.empty()) {
+    return "";
+  }
+
+  std::ostringstream stream;
+  for (size_t i = 0; i < completed_marker_ids_.size(); ++i) {
+    if (i > 0) {
+      stream << ",";
+    }
+    stream << completed_marker_ids_[i];
+  }
+  return stream.str();
+}
+
+std::string ArucoMissionNode::command_string_for_state(
+  State state, const geometry_msgs::msg::Twist & msg) const
+{
+  std::ostringstream stream;
+  switch (state) {
+    case State::SEARCHING:
+      stream << "start AR-detection sequence";
+      break;
+    case State::SEARCH_RECOVERY:
+      stream << "search recovery forward";
+      break;
+    case State::APPROACHING:
+      stream << "navigate to marker " << current_target_marker_id_;
+      break;
+    case State::TURNING:
+      stream << "turn 90deg around marker";
+      break;
+    case State::ORBITING:
+      stream << "orbit marker " << current_target_marker_id_;
+      break;
+    case State::FINISHED:
+      stream << "stop navigation";
+      break;
+  }
+  stream << " (vx=" << msg.linear.x << ", wz=" << msg.angular.z << ")";
+  return stream.str();
+}
+
+std::string ArucoMissionNode::action_string_for_state(State state) const
+{
+  switch (state) {
+    case State::SEARCHING:
+      return "[NAVI] searching markers";
+    case State::SEARCH_RECOVERY:
+      return "[NAVI] recovery move";
+    case State::APPROACHING:
+      return "[NAVI] approaching marker";
+    case State::TURNING:
+      return "[NAVI] turning around marker";
+    case State::ORBITING:
+      return "[NAVI] orbiting marker";
+    case State::FINISHED:
+      return "[NAVI] mission finished";
+    default:
+      return "[NAVI] unknown";
+  }
+}
+
+std::string ArucoMissionNode::result_string_for_state(
+  State state, const geometry_msgs::msg::Twist & msg) const
+{
+  if (state == State::FINISHED) {
+    return "[NAVI] goal judged Mission Completed";
+  }
+
+  if (std::fabs(msg.linear.x) < 1e-6 && std::fabs(msg.angular.z) < 1e-6) {
+    return "[NAVI] stopped";
+  }
+
+  std::ostringstream stream;
+  stream << "[NAVI] cmd sent vx=" << msg.linear.x << " wz=" << msg.angular.z;
+  return stream.str();
+}
+
+void ArucoMissionNode::publish_control_history(
+  const std::string & command, const std::string & action, const std::string & result,
+  bool publish_checked_point)
+{
+  std_msgs::msg::String command_msg;
+  command_msg.data = command;
+  command_pub_->publish(command_msg);
+
+  std_msgs::msg::String action_msg;
+  action_msg.data = action;
+  action_pub_->publish(action_msg);
+
+  std_msgs::msg::String result_msg;
+  result_msg.data = result;
+  result_pub_->publish(result_msg);
+
+  if (publish_checked_point) {
+    std_msgs::msg::String checked_point_msg;
+    checked_point_msg.data = checked_points_string();
+    checked_point_pub_->publish(checked_point_msg);
+  }
+}
+
 void ArucoMissionNode::aruco_callback(const aruco_opencv_msgs::msg::ArucoDetection::SharedPtr msg)
 {
   last_markers_msg_ = msg;
@@ -405,10 +533,14 @@ void ArucoMissionNode::start_trigger_callback(const std_msgs::msg::Bool::SharedP
     last_approach_angular_cmd_ = 0.0;
     search_start_time_ = this->now();
     RCLCPP_INFO(this->get_logger(), "Mission start trigger received. Switching to SEARCHING");
+    publish_control_history(
+      "start AR-detection sequence", "[NAVI] mission start", "mission started", true);
   } else {
     mission_enabled_ = false;
     publish_stop_once_ = true;
     RCLCPP_INFO(this->get_logger(), "Mission stop trigger received. Mission disabled");
+    publish_control_history(
+      "stop AR-detection sequence", "[NAVI] mission stop", "mission stopped", true);
   }
 }
 
@@ -452,6 +584,9 @@ void ArucoMissionNode::control_loop()
   }
 
   cmd_vel_pub_->publish(drive_msg);
+  publish_control_history(
+    command_string_for_state(state_, drive_msg), action_string_for_state(state_),
+    result_string_for_state(state_, drive_msg), false);
 }
 
 void ArucoMissionNode::do_searching(geometry_msgs::msg::Twist & msg)

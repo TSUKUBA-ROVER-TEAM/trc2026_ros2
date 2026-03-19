@@ -1,9 +1,10 @@
 #ifndef TRC2026_CONTROL_CONTROL_HISTORY_CSV_LOGGER_NODE_HPP
 #define TRC2026_CONTROL_CONTROL_HISTORY_CSV_LOGGER_NODE_HPP
 
+#include "rclcpp/rclcpp.hpp"
+
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/nav_sat_fix.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -18,8 +19,7 @@ namespace trc2026_control
 class ControlHistoryCsvLoggerNode : public rclcpp::Node
 {
 public:
-  explicit ControlHistoryCsvLoggerNode(
-    const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit ControlHistoryCsvLoggerNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   ~ControlHistoryCsvLoggerNode() override;
 
 private:
@@ -54,6 +54,7 @@ private:
   bool include_action_result_;
   bool include_autonomy_;
   double intervention_hold_sec_;
+  bool aruco_start_enabled_;
 
   double current_lat_;
   double current_lon_;

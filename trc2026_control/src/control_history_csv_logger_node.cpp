@@ -1,8 +1,9 @@
 #include "trc2026_control/control_history_csv_logger_node.hpp"
 
 #include "rclcpp_components/register_node_macro.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.h"
+
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -51,16 +52,16 @@ std::string format_double(double value, int precision = 8)
 std::string format_timestamp(const rclcpp::Time & stamp)
 {
   const int64_t ns = stamp.nanoseconds();
-  const std::time_t sec = static_cast<std::time_t>(ns / 1000000000LL);
+  const std::time_t sec = static_cast<std::time_t>(ns / 1000000000LL) + (9 * 60 * 60);
   const int64_t rem_ns = ns % 1000000000LL;
   const int64_t centiseconds = rem_ns / 10000000LL;
 
-  std::tm tm_utc {};
-  gmtime_r(&sec, &tm_utc);
+  std::tm tm_jst{};
+  gmtime_r(&sec, &tm_jst);
 
   std::ostringstream stream;
-  stream << std::put_time(&tm_utc, "%Y-%m-%dT%H:%M:%S") << "." << std::setw(2)
-         << std::setfill('0') << centiseconds;
+  stream << std::put_time(&tm_jst, "%Y-%m-%dT%H:%M:%S") << "." << std::setw(2) << std::setfill('0')
+         << centiseconds;
   return stream.str();
 }
 
@@ -89,7 +90,7 @@ bool file_has_content(const std::string & path)
 std::string with_timestamp_suffix(const std::string & path, const std::string & format)
 {
   std::time_t now = std::time(nullptr);
-  std::tm local_tm {};
+  std::tm local_tm{};
   localtime_r(&now, &local_tm);
 
   std::ostringstream ts_stream;
@@ -98,8 +99,8 @@ std::string with_timestamp_suffix(const std::string & path, const std::string & 
 
   const std::size_t slash_pos = path.find_last_of('/');
   const std::size_t dot_pos = path.find_last_of('.');
-  const bool has_extension = (dot_pos != std::string::npos) &&
-                             (slash_pos == std::string::npos || dot_pos > slash_pos);
+  const bool has_extension =
+    (dot_pos != std::string::npos) && (slash_pos == std::string::npos || dot_pos > slash_pos);
 
   if (!has_extension) {
     return path + "_" + timestamp;
@@ -133,7 +134,7 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
   this->declare_parameter<bool>("add_timestamp_to_filename", true);
   this->declare_parameter<std::string>("filename_timestamp_format", "%Y%m%d_%H%M%S");
   this->declare_parameter<bool>("append", true);
-  this->declare_parameter<double>("write_interval_sec", 0.2);
+  this->declare_parameter<double>("write_interval_sec", 0.5);
 
   this->declare_parameter<bool>("include_target_columns", true);
   this->declare_parameter<bool>("include_azimuth_columns", true);
@@ -171,6 +172,7 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
   include_checked_point_ = this->get_parameter("include_checked_point").as_bool();
   include_action_result_ = this->get_parameter("include_action_result").as_bool();
   include_autonomy_ = this->get_parameter("include_autonomy").as_bool();
+  aruco_start_enabled_ = false;
 
   target_lat_ = this->get_parameter("target_latitude").as_double();
   target_lon_ = this->get_parameter("target_longitude").as_double();
@@ -207,7 +209,8 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
     auto_cmd_topic, sensor_qos,
     std::bind(&ControlHistoryCsvLoggerNode::on_auto_cmd_vel, this, std::placeholders::_1));
   start_sub_ = this->create_subscription<std_msgs::msg::Bool>(
-    start_topic, 10, std::bind(&ControlHistoryCsvLoggerNode::on_start, this, std::placeholders::_1));
+    start_topic, 10,
+    std::bind(&ControlHistoryCsvLoggerNode::on_start, this, std::placeholders::_1));
   command_sub_ = this->create_subscription<std_msgs::msg::String>(
     command_topic, 10,
     std::bind(&ControlHistoryCsvLoggerNode::on_command, this, std::placeholders::_1));
@@ -215,7 +218,8 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
     action_topic, 10,
     std::bind(&ControlHistoryCsvLoggerNode::on_action, this, std::placeholders::_1));
   result_sub_ = this->create_subscription<std_msgs::msg::String>(
-    result_topic, 10, std::bind(&ControlHistoryCsvLoggerNode::on_result, this, std::placeholders::_1));
+    result_topic, 10,
+    std::bind(&ControlHistoryCsvLoggerNode::on_result, this, std::placeholders::_1));
   checked_point_sub_ = this->create_subscription<std_msgs::msg::String>(
     checked_point_topic, 10,
     std::bind(&ControlHistoryCsvLoggerNode::on_checked_point, this, std::placeholders::_1));
@@ -233,6 +237,7 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
 ControlHistoryCsvLoggerNode::~ControlHistoryCsvLoggerNode()
 {
   if (csv_.is_open()) {
+    on_timer();
     csv_.flush();
     csv_.close();
   }
@@ -289,9 +294,7 @@ void ControlHistoryCsvLoggerNode::write_csv_row(const std::vector<std::string> &
 
 std::string ControlHistoryCsvLoggerNode::current_autonomy() const
 {
-  const bool intervention =
-    (this->now() - last_manual_cmd_time_).seconds() <= intervention_hold_sec_;
-  return intervention ? "Intervention" : "Autonomy";
+  return aruco_start_enabled_ ? "Autonomy" : "Intervention";
 }
 
 std::string ControlHistoryCsvLoggerNode::inferred_command() const
@@ -375,6 +378,7 @@ void ControlHistoryCsvLoggerNode::on_auto_cmd_vel(const geometry_msgs::msg::Twis
 
 void ControlHistoryCsvLoggerNode::on_start(const std_msgs::msg::Bool::SharedPtr msg)
 {
+  aruco_start_enabled_ = msg->data;
   if (msg->data) {
     last_command_ = "start AR-detection sequence";
     last_action_ = "[NAVI] mission start";

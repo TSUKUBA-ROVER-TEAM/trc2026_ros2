@@ -50,6 +50,13 @@ private:
   void finish_orbit_and_select_next();
   std::string state_to_string(State state) const;
   std::string current_sequence_string() const;
+  std::string checked_points_string() const;
+  std::string command_string_for_state(State state, const geometry_msgs::msg::Twist & msg) const;
+  std::string action_string_for_state(State state) const;
+  std::string result_string_for_state(State state, const geometry_msgs::msg::Twist & msg) const;
+  void publish_control_history(
+    const std::string & command, const std::string & action, const std::string & result,
+    bool publish_checked_point);
 
   void aruco_callback(const aruco_opencv_msgs::msg::ArucoDetection::SharedPtr msg);
   void start_trigger_callback(const std_msgs::msg::Bool::SharedPtr msg);
@@ -88,6 +95,10 @@ private:
 
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr sequence_pub_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr command_pub_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr action_pub_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr result_pub_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr checked_point_pub_;
   rclcpp::Subscription<aruco_opencv_msgs::msg::ArucoDetection>::SharedPtr aruco_sub_;
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr start_trigger_sub_;
   aruco_opencv_msgs::msg::ArucoDetection::SharedPtr last_markers_msg_;

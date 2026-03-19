@@ -4,8 +4,10 @@
 #include "trc2026_manual/base_manual_controller.hpp"
 
 #include "geometry_msgs/msg/twist.hpp"
+#include "std_msgs/msg/string.hpp"
 
 #include <chrono>
+#include <string>
 
 namespace trc2026_manual
 {
@@ -30,6 +32,10 @@ private:
   void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg) override;
 
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_publisher_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr command_publisher_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr action_publisher_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr result_publisher_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr checked_point_publisher_;
 
   rclcpp::TimerBase::SharedPtr publish_timer_;
 
@@ -38,7 +44,6 @@ private:
   double joy_timeout_sec_;
 
   geometry_msgs::msg::Twist last_cmd_vel_;
-
 
   int axis_linear_x_;
   int axis_linear_y_;
@@ -52,6 +57,8 @@ private:
    * @brief 定期送信タイマーコールバック
    */
   void publish_timer_callback();
+  void publish_control_history(
+    const std::string & command, const std::string & action, const std::string & result);
 };
 
 }  // namespace trc2026_manual

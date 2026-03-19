@@ -4,9 +4,12 @@
 #include "trc2026_manual/base_manual_controller.hpp"
 
 #include "control_msgs/msg/joint_jog.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
 #include "std_msgs/msg/int16.hpp"
-#include "std_msgs/msg/bool.hpp"
+#include "std_msgs/msg/string.hpp"
+
+#include <string>
 
 namespace trc2026_manual
 {
@@ -39,6 +42,10 @@ private:
   rclcpp::Publisher<control_msgs::msg::JointJog>::SharedPtr joint_jog_publisher_;
   rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr arm_command_publisher_;
   rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr science_command_publisher_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr command_publisher_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr action_publisher_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr result_publisher_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr checked_point_publisher_;
 
   // サブスクライバ
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr arm_limit_switch_subscriber_;
@@ -68,6 +75,9 @@ private:
 
   // science/command 送信制限用
   rclcpp::Time last_science_cmd_time_;
+
+  void publish_control_history(
+    const std::string & command, const std::string & action, const std::string & result);
 };
 
 }  // namespace trc2026_manual
