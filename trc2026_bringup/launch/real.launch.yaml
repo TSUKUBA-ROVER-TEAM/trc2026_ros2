@@ -148,7 +148,7 @@ launch:
       name: "rt_usb_9axisimu_driver"
       param:
         - name: "port"
-          value: "/dev/ttyACM0"
+          value: "/dev/imu"
         - name: "frame_id"
           value: "imu_link"
       remap:

@@ -10,6 +10,7 @@
 #include "aruco_opencv_msgs/msg/aruco_detection.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include "std_msgs/msg/string.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include <chrono>
@@ -38,6 +39,8 @@ public:
 private:
   bool is_target_marker_id(uint16_t marker_id) const;
   int find_target_marker_index() const;
+  std::string state_to_string(State state) const;
+  std::string current_sequence_string() const;
 
   void aruco_callback(const aruco_opencv_msgs::msg::ArucoDetection::SharedPtr msg);
   void start_trigger_callback(const std_msgs::msg::Bool::SharedPtr msg);
@@ -56,14 +59,21 @@ private:
   double approach_distance_;
   double linear_speed_;
   double angular_speed_;
+  double approach_angular_gain_;
+  double max_approach_angular_speed_;
+  double last_approach_linear_cmd_;
+  double last_approach_angular_cmd_;
   double search_turn_count_;
   double search_recovery_speed_;
   double search_recovery_duration_;
+  long target_lost_cycles_;
+  long target_lost_count_;
   bool auto_start_;
   bool mission_enabled_;
   bool publish_stop_once_;
 
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr sequence_pub_;
   rclcpp::Subscription<aruco_opencv_msgs::msg::ArucoDetection>::SharedPtr aruco_sub_;
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr start_trigger_sub_;
   aruco_opencv_msgs::msg::ArucoDetection::SharedPtr last_markers_msg_;
