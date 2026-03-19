@@ -37,8 +37,17 @@ public:
   explicit ArucoMissionNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
 private:
-  bool is_target_marker_id(uint16_t marker_id) const;
-  int find_target_marker_index() const;
+  bool contains_id(const std::vector<long> & ids, uint16_t marker_id) const;
+  bool is_avoid_marker_id(uint16_t marker_id) const;
+  bool is_goal_marker_id(uint16_t marker_id) const;
+  bool is_completed_marker_id(uint16_t marker_id) const;
+  bool should_track_marker_id(uint16_t marker_id) const;
+  int find_marker_index_by_id(uint16_t marker_id) const;
+  int find_best_target_marker_index() const;
+  size_t remaining_non_goal_targets() const;
+  size_t remaining_goal_targets() const;
+  std::string ids_to_string(const std::vector<long> & ids) const;
+  void finish_orbit_and_select_next();
   std::string state_to_string(State state) const;
   std::string current_sequence_string() const;
 
@@ -53,9 +62,14 @@ private:
   void do_orbiting(geometry_msgs::msg::Twist & msg);
 
   State state_;
-  long target_marker_id_;
-  long target_marker_id_min_;
-  long target_marker_id_max_;
+  long target_marker_count_;
+  std::vector<long> target_marker_ids_;
+  std::vector<long> avoid_marker_ids_;
+  std::vector<long> goal_marker_ids_;
+  std::vector<long> non_goal_marker_ids_;
+  std::vector<long> completed_marker_ids_;
+  long current_target_marker_id_;
+  bool goal_phase_started_;
   double approach_distance_;
   double linear_speed_;
   double angular_speed_;

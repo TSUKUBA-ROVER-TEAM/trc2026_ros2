@@ -5,6 +5,9 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
+#include <limits>
+#include <sstream>
 
 using namespace std::chrono_literals;
 
@@ -15,9 +18,13 @@ ArucoMissionNode::ArucoMissionNode(const rclcpp::NodeOptions & options)
 : Node("aruco_mission_node", options), state_(State::SEARCHING)
 {
   // パラメータ
-  this->declare_parameter("target_marker_id", 0);
-  this->declare_parameter("target_marker_id_min", 0);
-  this->declare_parameter("target_marker_id_max", 9);
+  this->declare_parameter("target_marker_count", 0);
+  this->declare_parameter("target_marker_ids", std::vector<int64_t>{});
+  this->declare_parameter("avoid_marker_ids", std::vector<int64_t>{});
+  this->declare_parameter("goal_marker_ids", std::vector<int64_t>{});
+  this->declare_parameter("target_marker_id", 0);      // 互換用
+  this->declare_parameter("target_marker_id_min", 0);  // 互換用
+  this->declare_parameter("target_marker_id_max", 0);  // 互換用
   this->declare_parameter("approach_distance", 1.0);
   this->declare_parameter("linear_speed", 0.2);
   this->declare_parameter("angular_speed", 0.5);
@@ -29,22 +36,114 @@ ArucoMissionNode::ArucoMissionNode(const rclcpp::NodeOptions & options)
   this->declare_parameter("target_lost_cycles", 20);
   this->declare_parameter("auto_start", false);
 
-  target_marker_id_ = this->get_parameter("target_marker_id").as_int();
-  target_marker_id_min_ = this->get_parameter("target_marker_id_min").as_int();
-  target_marker_id_max_ = this->get_parameter("target_marker_id_max").as_int();
+  const auto to_long_vector = [](const std::vector<int64_t> & input) {
+    std::vector<long> output;
+    output.reserve(input.size());
+    for (const auto value : input) {
+      output.push_back(static_cast<long>(value));
+    }
+    return output;
+  };
 
-  if (target_marker_id_min_ == 0 && target_marker_id_max_ == 0) {
-    target_marker_id_min_ = target_marker_id_;
-    target_marker_id_max_ = target_marker_id_;
+  target_marker_count_ = this->get_parameter("target_marker_count").as_int();
+  target_marker_ids_ = to_long_vector(this->get_parameter("target_marker_ids").as_integer_array());
+  avoid_marker_ids_ = to_long_vector(this->get_parameter("avoid_marker_ids").as_integer_array());
+  goal_marker_ids_ = to_long_vector(this->get_parameter("goal_marker_ids").as_integer_array());
+
+  const auto normalize_ids = [](std::vector<long> & ids) {
+    std::sort(ids.begin(), ids.end());
+    ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+  };
+
+  normalize_ids(target_marker_ids_);
+  normalize_ids(avoid_marker_ids_);
+  normalize_ids(goal_marker_ids_);
+
+  if (target_marker_ids_.empty()) {
+    const long single_target_marker_id = this->get_parameter("target_marker_id").as_int();
+    long target_marker_id_min = this->get_parameter("target_marker_id_min").as_int();
+    long target_marker_id_max = this->get_parameter("target_marker_id_max").as_int();
+
+    if (target_marker_id_min == 0 && target_marker_id_max == 0) {
+      target_marker_id_min = single_target_marker_id;
+      target_marker_id_max = single_target_marker_id;
+    }
+
+    if (target_marker_id_min > target_marker_id_max) {
+      std::swap(target_marker_id_min, target_marker_id_max);
+    }
+
+    for (long id = target_marker_id_min; id <= target_marker_id_max; ++id) {
+      target_marker_ids_.push_back(id);
+    }
+
+    if (!target_marker_ids_.empty()) {
+      RCLCPP_WARN(
+        this->get_logger(), "target_marker_ids is empty. Fallback to legacy range [%ld, %ld]",
+        target_marker_id_min, target_marker_id_max);
+    }
   }
 
-  if (target_marker_id_min_ > target_marker_id_max_) {
-    std::swap(target_marker_id_min_, target_marker_id_max_);
+  normalize_ids(target_marker_ids_);
+
+  if (target_marker_count_ > 0) {
+    if (static_cast<size_t>(target_marker_count_) < target_marker_ids_.size()) {
+      target_marker_ids_.resize(static_cast<size_t>(target_marker_count_));
+      RCLCPP_WARN(
+        this->get_logger(),
+        "target_marker_count(%ld) < target_marker_ids size. Truncated target list.",
+        target_marker_count_);
+    } else if (static_cast<size_t>(target_marker_count_) > target_marker_ids_.size()) {
+      RCLCPP_WARN(
+        this->get_logger(),
+        "target_marker_count(%ld) > target_marker_ids size(%zu). Using list size.",
+        target_marker_count_, target_marker_ids_.size());
+    }
+  } else {
+    target_marker_count_ = static_cast<long>(target_marker_ids_.size());
+  }
+
+  auto filter_by_target = [this](std::vector<long> & ids, const char * label) {
+    const size_t before = ids.size();
+    ids.erase(
+      std::remove_if(
+        ids.begin(), ids.end(),
+        [this](const long id) {
+          return std::find(target_marker_ids_.begin(), target_marker_ids_.end(), id) ==
+                 target_marker_ids_.end();
+        }),
+      ids.end());
+    if (ids.size() != before) {
+      RCLCPP_WARN(this->get_logger(), "%s contains IDs not in target_marker_ids. Filtered.", label);
+    }
+  };
+
+  filter_by_target(avoid_marker_ids_, "avoid_marker_ids");
+  filter_by_target(goal_marker_ids_, "goal_marker_ids");
+
+  non_goal_marker_ids_.clear();
+  for (const auto id : target_marker_ids_) {
+    if (
+      std::find(avoid_marker_ids_.begin(), avoid_marker_ids_.end(), id) !=
+      avoid_marker_ids_.end()) {
+      continue;
+    }
+    if (std::find(goal_marker_ids_.begin(), goal_marker_ids_.end(), id) != goal_marker_ids_.end()) {
+      continue;
+    }
+    non_goal_marker_ids_.push_back(id);
+  }
+
+  if (goal_marker_ids_.size() > 2) {
     RCLCPP_WARN(
       this->get_logger(),
-      "target_marker_id_min > target_marker_id_max. Swapped values to [%ld, %ld]",
-      target_marker_id_min_, target_marker_id_max_);
+      "goal_marker_ids has %zu elements. Current mission logic is optimized for 2 goals.",
+      goal_marker_ids_.size());
   }
+
+  completed_marker_ids_.clear();
+  current_target_marker_id_ = -1;
+  goal_phase_started_ = (non_goal_marker_ids_.empty() && !goal_marker_ids_.empty());
 
   approach_distance_ = this->get_parameter("approach_distance").as_double();
   linear_speed_ = this->get_parameter("linear_speed").as_double();
@@ -90,33 +189,174 @@ ArucoMissionNode::ArucoMissionNode(const rclcpp::NodeOptions & options)
   }
 
   RCLCPP_INFO(
-    this->get_logger(), "Target marker id range: [%ld, %ld]",
-    target_marker_id_min_, target_marker_id_max_);
+    this->get_logger(), "target_marker_ids: %s", ids_to_string(target_marker_ids_).c_str());
+  RCLCPP_INFO(this->get_logger(), "avoid_marker_ids: %s", ids_to_string(avoid_marker_ids_).c_str());
+  RCLCPP_INFO(this->get_logger(), "goal_marker_ids: %s", ids_to_string(goal_marker_ids_).c_str());
+  RCLCPP_INFO(
+    this->get_logger(), "non_goal_marker_ids: %s", ids_to_string(non_goal_marker_ids_).c_str());
   RCLCPP_INFO(this->get_logger(), "target_lost_cycles: %ld", target_lost_cycles_);
   RCLCPP_INFO(
     this->get_logger(), "approach_angular_gain: %.3f, max_approach_angular_speed: %.3f",
     approach_angular_gain_, max_approach_angular_speed_);
 }
 
-bool ArucoMissionNode::is_target_marker_id(uint16_t marker_id) const
+bool ArucoMissionNode::contains_id(const std::vector<long> & ids, uint16_t marker_id) const
 {
-  const long marker_id_long = static_cast<long>(marker_id);
-  return marker_id_long >= target_marker_id_min_ && marker_id_long <= target_marker_id_max_;
+  return std::find(ids.begin(), ids.end(), static_cast<long>(marker_id)) != ids.end();
 }
 
-int ArucoMissionNode::find_target_marker_index() const
+bool ArucoMissionNode::is_avoid_marker_id(uint16_t marker_id) const
+{
+  return contains_id(avoid_marker_ids_, marker_id);
+}
+
+bool ArucoMissionNode::is_goal_marker_id(uint16_t marker_id) const
+{
+  return contains_id(goal_marker_ids_, marker_id);
+}
+
+bool ArucoMissionNode::is_completed_marker_id(uint16_t marker_id) const
+{
+  return contains_id(completed_marker_ids_, marker_id);
+}
+
+bool ArucoMissionNode::should_track_marker_id(uint16_t marker_id) const
+{
+  if (!contains_id(target_marker_ids_, marker_id)) {
+    return false;
+  }
+
+  if (is_avoid_marker_id(marker_id)) {
+    return false;
+  }
+
+  if (is_completed_marker_id(marker_id)) {
+    return false;
+  }
+
+  if (goal_phase_started_) {
+    return is_goal_marker_id(marker_id);
+  }
+
+  return !is_goal_marker_id(marker_id);
+}
+
+int ArucoMissionNode::find_marker_index_by_id(uint16_t marker_id) const
 {
   if (!last_markers_msg_) {
     return -1;
   }
 
   for (size_t i = 0; i < last_markers_msg_->markers.size(); ++i) {
-    if (is_target_marker_id(last_markers_msg_->markers[i].marker_id)) {
+    if (last_markers_msg_->markers[i].marker_id == marker_id) {
       return static_cast<int>(i);
     }
   }
 
   return -1;
+}
+
+int ArucoMissionNode::find_best_target_marker_index() const
+{
+  if (!last_markers_msg_) {
+    return -1;
+  }
+
+  double best_distance = std::numeric_limits<double>::infinity();
+  int best_index = -1;
+
+  for (size_t i = 0; i < last_markers_msg_->markers.size(); ++i) {
+    const auto marker_id = last_markers_msg_->markers[i].marker_id;
+    if (!should_track_marker_id(marker_id)) {
+      continue;
+    }
+
+    const auto & pose = last_markers_msg_->markers[i].pose;
+    const double distance = std::sqrt(
+      std::pow(pose.position.x, 2) + std::pow(pose.position.y, 2) + std::pow(pose.position.z, 2));
+
+    if (distance < best_distance) {
+      best_distance = distance;
+      best_index = static_cast<int>(i);
+    }
+  }
+
+  return best_index;
+}
+
+size_t ArucoMissionNode::remaining_non_goal_targets() const
+{
+  size_t remaining = 0;
+  for (const auto id : non_goal_marker_ids_) {
+    if (!contains_id(completed_marker_ids_, static_cast<uint16_t>(id))) {
+      ++remaining;
+    }
+  }
+  return remaining;
+}
+
+size_t ArucoMissionNode::remaining_goal_targets() const
+{
+  size_t remaining = 0;
+  for (const auto id : goal_marker_ids_) {
+    if (!contains_id(completed_marker_ids_, static_cast<uint16_t>(id))) {
+      ++remaining;
+    }
+  }
+  return remaining;
+}
+
+std::string ArucoMissionNode::ids_to_string(const std::vector<long> & ids) const
+{
+  if (ids.empty()) {
+    return "[]";
+  }
+
+  std::ostringstream stream;
+  stream << "[";
+  for (size_t i = 0; i < ids.size(); ++i) {
+    stream << ids[i];
+    if (i + 1 < ids.size()) {
+      stream << ", ";
+    }
+  }
+  stream << "]";
+  return stream.str();
+}
+
+void ArucoMissionNode::finish_orbit_and_select_next()
+{
+  if (
+    current_target_marker_id_ >= 0 &&
+    !contains_id(completed_marker_ids_, static_cast<uint16_t>(current_target_marker_id_))) {
+    completed_marker_ids_.push_back(current_target_marker_id_);
+  }
+
+  RCLCPP_INFO(
+    this->get_logger(), "Orbit finished for marker %ld. remaining_non_goal=%zu, remaining_goal=%zu",
+    current_target_marker_id_, remaining_non_goal_targets(), remaining_goal_targets());
+
+  current_target_marker_id_ = -1;
+  target_lost_count_ = 0;
+  last_approach_linear_cmd_ = 0.0;
+  last_approach_angular_cmd_ = 0.0;
+
+  if (!goal_phase_started_ && remaining_non_goal_targets() == 0 && remaining_goal_targets() > 0) {
+    goal_phase_started_ = true;
+    RCLCPP_INFO(
+      this->get_logger(),
+      "All non-goal markers completed. Switching to GOAL phase. Previously seen markers are "
+      "allowed.");
+  }
+
+  if (remaining_non_goal_targets() == 0 && remaining_goal_targets() == 0) {
+    state_ = State::FINISHED;
+    RCLCPP_INFO(this->get_logger(), "All mission markers completed. Switching to FINISHED");
+    return;
+  }
+
+  search_start_time_ = this->now();
+  state_ = State::SEARCHING;
 }
 
 std::string ArucoMissionNode::state_to_string(State state) const
@@ -157,6 +397,9 @@ void ArucoMissionNode::start_trigger_callback(const std_msgs::msg::Bool::SharedP
   if (msg->data) {
     mission_enabled_ = true;
     state_ = State::SEARCHING;
+    completed_marker_ids_.clear();
+    current_target_marker_id_ = -1;
+    goal_phase_started_ = (non_goal_marker_ids_.empty() && !goal_marker_ids_.empty());
     target_lost_count_ = 0;
     last_approach_linear_cmd_ = 0.0;
     last_approach_angular_cmd_ = 0.0;
@@ -213,17 +456,31 @@ void ArucoMissionNode::control_loop()
 
 void ArucoMissionNode::do_searching(geometry_msgs::msg::Twist & msg)
 {
+  if (remaining_non_goal_targets() == 0 && remaining_goal_targets() == 0) {
+    msg.linear.x = 0.0;
+    msg.angular.z = 0.0;
+    state_ = State::FINISHED;
+    RCLCPP_INFO(this->get_logger(), "No remaining mission markers. Switching to FINISHED");
+    return;
+  }
+
   // 超信地回転
   msg.linear.x = 0.0;
   msg.angular.z = angular_speed_;
 
-  const int idx = find_target_marker_index();
+  if (!goal_phase_started_ && remaining_non_goal_targets() == 0 && remaining_goal_targets() > 0) {
+    goal_phase_started_ = true;
+    RCLCPP_INFO(this->get_logger(), "Switching to GOAL phase. Goal markers are now targetable.");
+  }
+
+  const int idx = find_best_target_marker_index();
   if (idx >= 0) {
+    current_target_marker_id_ =
+      static_cast<long>(last_markers_msg_->markers[static_cast<size_t>(idx)].marker_id);
     target_lost_count_ = 0;
     RCLCPP_INFO(
-      this->get_logger(), "Marker %u found in target range [%ld, %ld]! Switching to APPROACHING",
-      last_markers_msg_->markers[static_cast<size_t>(idx)].marker_id,
-      target_marker_id_min_, target_marker_id_max_);
+      this->get_logger(), "Marker %ld selected. Switching to APPROACHING (goal_phase=%s)",
+      current_target_marker_id_, goal_phase_started_ ? "true" : "false");
     state_ = State::APPROACHING;
   }
 
@@ -262,11 +519,18 @@ void ArucoMissionNode::do_search_recovery(geometry_msgs::msg::Twist & msg)
 
 void ArucoMissionNode::do_approaching(geometry_msgs::msg::Twist & msg)
 {
+  if (current_target_marker_id_ < 0) {
+    search_start_time_ = this->now();
+    state_ = State::SEARCHING;
+    return;
+  }
+
   if (!last_markers_msg_) {
     target_lost_count_++;
     if (target_lost_count_ >= target_lost_cycles_) {
       search_start_time_ = this->now();
       state_ = State::SEARCHING;
+      current_target_marker_id_ = -1;
       target_lost_count_ = 0;
       last_approach_linear_cmd_ = 0.0;
       last_approach_angular_cmd_ = 0.0;
@@ -277,16 +541,17 @@ void ArucoMissionNode::do_approaching(geometry_msgs::msg::Twist & msg)
     return;
   }
 
-  int idx = find_target_marker_index();
+  int idx = find_marker_index_by_id(static_cast<uint16_t>(current_target_marker_id_));
 
   if (idx == -1) {
     target_lost_count_++;
     if (target_lost_count_ >= target_lost_cycles_) {
       RCLCPP_WARN(
-        this->get_logger(), "Target marker lost for %ld cycles. Switching to SEARCHING",
-        target_lost_cycles_);
+        this->get_logger(), "Target marker %ld lost for %ld cycles. Switching to SEARCHING",
+        current_target_marker_id_, target_lost_cycles_);
       search_start_time_ = this->now();
       state_ = State::SEARCHING;
+      current_target_marker_id_ = -1;
       target_lost_count_ = 0;
       last_approach_linear_cmd_ = 0.0;
       last_approach_angular_cmd_ = 0.0;
@@ -318,7 +583,9 @@ void ArucoMissionNode::do_approaching(geometry_msgs::msg::Twist & msg)
     msg.angular.z = 0.0;
     turn_start_time_ = this->now();
 
-    RCLCPP_INFO(this->get_logger(), "Reached target distance. Switching to TURNING 90 deg");
+    RCLCPP_INFO(
+      this->get_logger(), "Reached target marker %ld. Switching to TURNING 90 deg",
+      current_target_marker_id_);
     state_ = State::TURNING;
   }
 
@@ -328,7 +595,8 @@ void ArucoMissionNode::do_approaching(geometry_msgs::msg::Twist & msg)
 
 void ArucoMissionNode::do_turning(geometry_msgs::msg::Twist & msg)
 {
-  double turn_duration = (M_PI / 2.0) / angular_speed_;
+  const double safe_turn_speed = std::max(std::abs(angular_speed_), 1e-3);
+  double turn_duration = (M_PI / 2.0) / safe_turn_speed;
   auto elapsed = (this->now() - turn_start_time_).seconds();
 
   if (elapsed > turn_duration) {
@@ -344,17 +612,18 @@ void ArucoMissionNode::do_turning(geometry_msgs::msg::Twist & msg)
 
 void ArucoMissionNode::do_orbiting(geometry_msgs::msg::Twist & msg)
 {
-  double orbit_duration = 2.0 * M_PI * approach_distance_ / linear_speed_;
+  const double safe_linear_speed = std::max(std::abs(linear_speed_), 1e-3);
+  const double safe_approach_distance = std::max(std::abs(approach_distance_), 1e-3);
+  double orbit_duration = 2.0 * M_PI * safe_approach_distance / safe_linear_speed;
   auto elapsed = (this->now() - orbit_start_time_).seconds();
 
   if (elapsed > orbit_duration) {
-    RCLCPP_INFO(this->get_logger(), "Orbit finished.");
-    state_ = State::FINISHED;
+    finish_orbit_and_select_next();
     return;
   }
 
   msg.linear.x = linear_speed_;
-  msg.angular.z = linear_speed_ / approach_distance_;
+  msg.angular.z = linear_speed_ / safe_approach_distance;
 }
 
 }  // namespace trc2026_control
