@@ -18,40 +18,55 @@ launch:
 - include:
     file: "$(find-pkg-share azure_kinect_ros_driver)/launch/driver.launch.py"
     arg:
-    - name: "depth_mode"
-      value: "WFOV_2X2BINNED"
-    - name: "fps"
-      value: "5"
-    - name: "color_resolution"
-      value: "720P"
-    - name: "color_format"
-      value: "bgra"
-    - name: "overwrite_robot_description"
-      value: "false"
+      - name: "depth_enabled"
+        value: "false"
+      - name: "point_cloud"
+        value: "false"
+      - name: "rgb_point_cloud"
+        value: "false"
+      - name: "color_resolution"
+        value: "720P"
+      - name: "fps"
+        value: "15"
+      - name: "color_format"
+        value: "jpeg"
 
-# Image Format Conversion: BGRA -> BGR8
-# Azure Kinect outputs BGRA, but aruco_opencv requires BGR8 or Mono8.
+- node:
+    pkg: "image_transport"
+    exec: "republish"
+    name: "rgb_decompressor"
+    param:
+      - name: "in_transport"
+        value: "compressed"
+      - name: "out_transport"
+        value: "raw"
+    remap:
+      - from: "in/compressed"
+        to: "/rgb/image_raw/compressed"
+      - from: "out"
+        to: "/rgb/image_bgra"
+  
 - node:
     pkg: "trc2026_bringup"
     exec: "bgra_to_bgr_converter.py"
     name: "bgra_to_bgr_converter"
     param:
-    - name: "input_topic"
-      value: "/rgb/image_raw"
-    - name: "output_topic"
-      value: "/rgb/image_bgr"
-
+      - name: "input_topic"
+        value: "/rgb/image_bgra"
+      - name: "output_topic"
+        value: "/rgb/image_bgr"
+  
 # ArUco Marker Tracker (aruco_opencv)
 - node:
     pkg: "aruco_opencv"
     exec: "aruco_tracker_autostart"
     name: "aruco_tracker"
     param:
-    - name: "cam_base_topic"
-      value: "/rgb/image_bgr"
-    - name: "marker_dict"
-      value: "5X5_1000"
-    - name: "image_is_rectified"
-      value: true
-    - name: "marker_size"
-      value: 0.20
+      - name: "cam_base_topic"
+        value: "/rgb/image_bgr"
+      - name: "marker_dict"
+        value: "5X5_1000"
+      - name: "image_is_rectified"
+        value: true
+      - name: "marker_size"
+        value: 0.20
