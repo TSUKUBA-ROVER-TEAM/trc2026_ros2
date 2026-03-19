@@ -36,6 +36,9 @@ public:
   explicit ArucoMissionNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
 private:
+  bool is_target_marker_id(uint16_t marker_id) const;
+  int find_target_marker_index() const;
+
   void aruco_callback(const aruco_opencv_msgs::msg::ArucoDetection::SharedPtr msg);
   void start_trigger_callback(const std_msgs::msg::Bool::SharedPtr msg);
   void control_loop();
@@ -48,6 +51,8 @@ private:
 
   State state_;
   long target_marker_id_;
+  long target_marker_id_min_;
+  long target_marker_id_max_;
   double approach_distance_;
   double linear_speed_;
   double angular_speed_;

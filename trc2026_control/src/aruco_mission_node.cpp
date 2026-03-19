@@ -16,6 +16,8 @@ ArucoMissionNode::ArucoMissionNode(const rclcpp::NodeOptions & options)
 {
   // パラメータ
   this->declare_parameter("target_marker_id", 0);
+  this->declare_parameter("target_marker_id_min", 0);
+  this->declare_parameter("target_marker_id_max", 9);
   this->declare_parameter("approach_distance", 1.0);
   this->declare_parameter("linear_speed", 0.2);
   this->declare_parameter("angular_speed", 0.5);
@@ -25,6 +27,22 @@ ArucoMissionNode::ArucoMissionNode(const rclcpp::NodeOptions & options)
   this->declare_parameter("auto_start", false);
 
   target_marker_id_ = this->get_parameter("target_marker_id").as_int();
+  target_marker_id_min_ = this->get_parameter("target_marker_id_min").as_int();
+  target_marker_id_max_ = this->get_parameter("target_marker_id_max").as_int();
+
+  if (target_marker_id_min_ == 0 && target_marker_id_max_ == 0) {
+    target_marker_id_min_ = target_marker_id_;
+    target_marker_id_max_ = target_marker_id_;
+  }
+
+  if (target_marker_id_min_ > target_marker_id_max_) {
+    std::swap(target_marker_id_min_, target_marker_id_max_);
+    RCLCPP_WARN(
+      this->get_logger(),
+      "target_marker_id_min > target_marker_id_max. Swapped values to [%ld, %ld]",
+      target_marker_id_min_, target_marker_id_max_);
+  }
+
   approach_distance_ = this->get_parameter("approach_distance").as_double();
   linear_speed_ = this->get_parameter("linear_speed").as_double();
   angular_speed_ = this->get_parameter("angular_speed").as_double();
@@ -57,6 +75,31 @@ ArucoMissionNode::ArucoMissionNode(const rclcpp::NodeOptions & options)
   } else {
     RCLCPP_INFO(this->get_logger(), "Aruco Mission Node started. Waiting for /start trigger");
   }
+
+  RCLCPP_INFO(
+    this->get_logger(), "Target marker id range: [%ld, %ld]",
+    target_marker_id_min_, target_marker_id_max_);
+}
+
+bool ArucoMissionNode::is_target_marker_id(uint16_t marker_id) const
+{
+  const long marker_id_long = static_cast<long>(marker_id);
+  return marker_id_long >= target_marker_id_min_ && marker_id_long <= target_marker_id_max_;
+}
+
+int ArucoMissionNode::find_target_marker_index() const
+{
+  if (!last_markers_msg_) {
+    return -1;
+  }
+
+  for (size_t i = 0; i < last_markers_msg_->markers.size(); ++i) {
+    if (is_target_marker_id(last_markers_msg_->markers[i].marker_id)) {
+      return static_cast<int>(i);
+    }
+  }
+
+  return -1;
 }
 
 void ArucoMissionNode::aruco_callback(const aruco_opencv_msgs::msg::ArucoDetection::SharedPtr msg)
@@ -122,15 +165,13 @@ void ArucoMissionNode::do_searching(geometry_msgs::msg::Twist & msg)
   msg.linear.x = 0.0;
   msg.angular.z = angular_speed_;
 
-  if (last_markers_msg_) {
-    for (size_t i = 0; i < last_markers_msg_->markers.size(); ++i) {
-      if (last_markers_msg_->markers[i].marker_id == static_cast<uint16_t>(target_marker_id_)) {
-        RCLCPP_INFO(
-          this->get_logger(), "Marker %ld found! Switching to APPROACHING", target_marker_id_);
-        state_ = State::APPROACHING;
-        break;
-      }
-    }
+  const int idx = find_target_marker_index();
+  if (idx >= 0) {
+    RCLCPP_INFO(
+      this->get_logger(), "Marker %u found in target range [%ld, %ld]! Switching to APPROACHING",
+      last_markers_msg_->markers[static_cast<size_t>(idx)].marker_id,
+      target_marker_id_min_, target_marker_id_max_);
+    state_ = State::APPROACHING;
   }
 
   if (state_ != State::SEARCHING) {
@@ -174,13 +215,7 @@ void ArucoMissionNode::do_approaching(geometry_msgs::msg::Twist & msg)
     return;
   }
 
-  int idx = -1;
-  for (size_t i = 0; i < last_markers_msg_->markers.size(); ++i) {
-    if (last_markers_msg_->markers[i].marker_id == static_cast<uint16_t>(target_marker_id_)) {
-      idx = i;
-      break;
-    }
-  }
+  int idx = find_target_marker_index();
 
   if (idx == -1) {
     search_start_time_ = this->now();

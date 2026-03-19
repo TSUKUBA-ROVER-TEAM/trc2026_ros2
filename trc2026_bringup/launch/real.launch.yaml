@@ -95,8 +95,10 @@ launch:
         - from: "start"
           to: "/aruco_mission/start"
       param:
-        - name: "target_marker_id"
+        - name: "target_marker_id_min"
           value: 0
+        - name: "target_marker_id_max"
+          value: 9
         - name: "approach_distance"
           value: 1.0
         - name: "search_turn_count"
