@@ -22,6 +22,7 @@ install(
 install(
   PROGRAMS
     scripts/camera_node.py
+    scripts/bgra_to_bgr_converter.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
