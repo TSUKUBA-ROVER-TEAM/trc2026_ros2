@@ -31,31 +31,6 @@ launch:
       - name: "color_format"
         value: "jpeg"
 
-- node:
-    pkg: "image_transport"
-    exec: "republish"
-    name: "rgb_decompressor"
-    param:
-      - name: "in_transport"
-        value: "compressed"
-      - name: "out_transport"
-        value: "raw"
-    remap:
-      - from: "in/compressed"
-        to: "/rgb/image_raw/compressed"
-      - from: "out"
-        to: "/rgb/image_bgra"
-  
-- node:
-    pkg: "trc2026_bringup"
-    exec: "bgra_to_bgr_converter.py"
-    name: "bgra_to_bgr_converter"
-    param:
-      - name: "input_topic"
-        value: "/rgb/image_bgra"
-      - name: "output_topic"
-        value: "/rgb/image_bgr"
-  
 # ArUco Marker Tracker (aruco_opencv)
 - node:
     pkg: "aruco_opencv"
@@ -63,7 +38,9 @@ launch:
     name: "aruco_tracker"
     param:
       - name: "cam_base_topic"
-        value: "/rgb/image_bgr"
+        value: "/rgb/image_raw"
+      - name: "image_sub_compressed"
+        value: true
       - name: "marker_dict"
         value: "5X5_1000"
       - name: "image_is_rectified"
