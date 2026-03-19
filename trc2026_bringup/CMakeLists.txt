@@ -27,6 +27,7 @@ install(
     scripts/mag_logger_node.py
     scripts/mag_calibrate.py
     scripts/mag_calibrate_viz.py
+    scripts/bgra_to_bgr_converter.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -41,6 +41,126 @@ launch:
           value: false
         - name: "gear_ratio_scale"
           value: 0.6981 # (36.0 / 19.1) * (20.0 / 54.0) = 0.6981 (M3508 + 外部減速20:54用)
+<<<<<<< HEAD
+=======
+
+  # 自己位置推定 (Local EKF)
+  - node:
+      pkg: "robot_localization"
+      exec: "ekf_node"
+      name: "ekf_filter_node_odom"
+      output: "screen"
+      param:
+        - from: "$(find-pkg-share trc2026_bringup)/config/localization.yaml"
+      remap:
+        - from: "/odometry/filtered"
+          to: "/odometry/local"
+
+  # 自己位置推定 (Global EKF)
+  - node:
+      pkg: "robot_localization"
+      exec: "ekf_node"
+      name: "ekf_filter_node_map"
+      output: "screen"
+      param:
+        - from: "$(find-pkg-share trc2026_bringup)/config/localization.yaml"
+      remap:
+        - from: "/odometry/filtered"
+          to: "/odometry/global"
+
+  # GPS座標変換
+  - node:
+      pkg: "robot_localization"
+      exec: "navsat_transform_node"
+      name: "navsat_transform"
+      output: "screen"
+      param:
+        - from: "$(find-pkg-share trc2026_bringup)/config/localization.yaml"
+        - name: "datum"
+          value: [&gps_origin_lat 35.53715033333334, &gps_origin_lon 134.2116725, 0.0] # 実座標はここを変更
+      remap:
+        - from: "/imu/data"
+          to: "/imu/data"
+        - from: "/gps/fix"
+          to: "/gps/fix"
+        - from: "/odometry/filtered"
+          to: "/odometry/global"
+
+  # ウェイポイント追従
+  - node:
+      pkg: "four_wheel_steering_nav2"
+      exec: "waypoint_follower"
+      name: "waypoint_follower"
+      output: "screen"
+      param:
+        - name: "waypoints_file"
+          value: ""
+        - name: "use_pure_pursuit"
+          value: false # 4WS制御モード
+        - name: "gps_origin_lat"
+          value: *gps_origin_lat
+        - name: "gps_origin_lon"
+          value: *gps_origin_lon
+      remap:
+        - from: "/odometry/filtered"
+          to: "/odometry/global"
+        - from: "/cmd_vel"
+          to: "/cmd_vel_nav"
+
+  # ArUcoミッションマネージャー
+  - node:
+      pkg: "four_wheel_steering_nav2"
+      exec: "aruco_mission_manager"
+      name: "aruco_mission_manager"
+      output: "screen"
+      param:
+        - name: "csv_path"
+          value: "$(find-pkg-share trc2026_bringup)/config/aruco_missions.csv"
+        - name: "gps_origin_lat"
+          value: *gps_origin_lat
+        - name: "gps_origin_lon"
+          value: *gps_origin_lon
+        - name: "pass_margin"
+          value: 1.0
+        - name: "target_offset"
+          value: 2.0
+        - name: "frame_id"
+          value: "map"
+      remap:
+        - from: "/odometry/filtered"
+          to: "/odometry/global"
+
+  # ナビゲーション可視化 (Foxglove/RViz)
+  - node:
+      pkg: "four_wheel_steering_nav2"
+      exec: "navigation_visualizer"
+      name: "navigation_visualizer"
+      output: "screen"
+      param:
+        - name: "waypoints_file"
+          value: "$(find-pkg-share four_wheel_steering_nav2)/config/waypoints.yaml"
+        - name: "gps_origin_lat"
+          value: *gps_origin_lat
+        - name: "gps_origin_lon"
+          value: *gps_origin_lon
+        - name: "frame_id"
+          value: "map"
+        - name: "path_length"
+          value: 1000
+      remap:
+        - from: "/odometry/filtered"
+          to: "/odometry/global"
+
+  # ナビゲーション管理 (サービス/ステータス用)
+  - node:
+      pkg: "four_wheel_steering_nav2"
+      exec: "navigation_master"
+      name: "navigation_master"
+      output: "screen"
+      remap:
+        - from: "/odometry/filtered"
+          to: "/odometry/global"
+>>>>>>> main
 
   - node:
       pkg: "micro_ros_agent"
@@ -237,30 +357,25 @@ launch:
       exec: can_rx_node
       name: can_rx_node
 
-  - node:
-      pkg: trc2026_bringup
-      exec: camera_node.py
-      name: camera_fukan
-      param:
-        - name: device
-          value: "/dev/v4l/by-id/usb-Huawei_HiCamera_12345678-video-index0"
-        - name: frame_id
-          value: "camera_front_link"
-        - name: width
-          value: 640
-        - name: height
-          value: 360
-        - name: framerate
-          value: 30
-        - name: source_codec
-          value: "mjpg"
-        - name: lifespan_ms
-          value: 100
-      remap:
-        - from: compressed_video
-          to: /camera_fukan/compressed_video
+  # Azure Kinect Driver
+  - include:
+    file: "$(find-pkg-share azure_kinect_ros_driver)/launch/driver.launch.py"
+    arg:
+    - name: "depth_mode"
+      value: "WFOV_2X2BINNED"
+    - name: "fps"
+      value: "15"
+    - name: "color_resolution"
+      value: "720P"
+    - name: "color_format"
+      value: "bgra"
+    - name: "overwrite_robot_description"
+      value: "false"
 
+# Image Format Conversion: BGRA -> BGR8
+# Azure Kinect outputs BGRA, but aruco_opencv requires BGR8 or Mono8.
   - node:
+<<<<<<< HEAD
       pkg: "v4l2_camera"
       exec: "v4l2_camera_node"
       name: "arm_camera"
@@ -279,21 +394,27 @@ launch:
         - name: "qos_overrides./image_raw.publisher.depth"
           value: 1
 
+=======
+    pkg: "trc2026_bringup"
+    exec: "bgra_to_bgr_converter"
+    name: "bgra_to_bgr_converter"
+    param:
+    - name: "input_topic"
+      value: "/rgb/image_raw"
+    - name: "output_topic"
+      value: "/rgb/image_bgr"
+
+# ArUco Marker Tracker (aruco_opencv)
+>>>>>>> main
   - node:
-      pkg: "v4l2_camera"
-      exec: "v4l2_camera_node"
-      name: "science_camera"
-      namespace: "science_camera"
-      param:
-        - name: "video_device"
-          value: "/dev/v4l/by-id/usb-046d_C505e_HD_Webcam_D143AE90-video-index0"
-        - name: "image_size"
-          value: [352, 288]
-        - name: "frame_id"
-          value: "camera_link"
-        - name: "pixel_format"
-          value: "YUYV"
-        - name: "qos_overrides./image_raw.publisher.reliability"
-          value: "best_effort"
-        - name: "qos_overrides./image_raw.publisher.depth"
-          value: 1
+    pkg: "aruco_opencv"
+    exec: "aruco_tracker_autostart"
+    name: "aruco_tracker"
+    param:
+    - name: "cam_base_topic"
+      value: "/rgb/image_bgr"
+    - name: "marker_dict"
+      value: "5X5_1000"
+    - name: "image_is_rectified"
+      value: true
+    - name: "marker_size"
