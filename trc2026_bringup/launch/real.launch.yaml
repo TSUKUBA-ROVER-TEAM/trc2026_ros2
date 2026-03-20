@@ -99,16 +99,76 @@ launch:
           value: 0
         - name: "target_marker_id_max"
           value: 9
+        - name: "target_lost_cycles"
+          value: 20
         - name: "approach_distance"
-          value: 1.0
+          value: 2.0
         - name: "search_turn_count"
           value: 2.0
         - name: "search_recovery_speed"
-          value: 0.15
+          value: 0.6
         - name: "search_recovery_duration"
-          value: 1.0
+          value: 3.0
+        - name: "turning_duration_sec"
+          value: -1.0
+        - name: "orbiting_duration_sec"
+          value: -1.0
         - name: "auto_start"
           value: true
+        - name: "linear_speed"
+          value: 0.6
+        - name: "angular_speed"
+          value: 0.8
+        - name: "turning_duration_sec"
+          value: 4.0
+        - name: "orbiting_duration_sec"
+          value: 25.0
+
+          
+  - node:
+      pkg: "trc2026_control"
+      exec: "control_history_csv_logger_node"
+      name: "control_history_csv_logger"
+      output: "screen"
+      param:
+        - name: "output_csv"
+          value: "trc2026_control_history.csv"
+        - name: "append"
+          value: true
+        - name: "write_interval_sec"
+          value: 0.2
+        - name: "include_target_columns"
+          value: true
+        - name: "include_azimuth_columns"
+          value: true
+        - name: "include_checked_point"
+          value: true
+        - name: "include_action_result"
+          value: true
+        - name: "include_autonomy"
+          value: true
+        - name: "gps_topic"
+          value: "/gps/fix"
+        - name: "odom_topic"
+          value: "/odom"
+        - name: "cmd_vel_topic"
+          value: "/cmd_vel_out"
+        - name: "manual_cmd_topic"
+          value: "/cmd_vel_manual"
+        - name: "auto_cmd_topic"
+          value: "/cmd_vel_aruco"
+        - name: "start_topic"
+          value: "/aruco_mission/start"
+        - name: "command_topic"
+          value: "/control_history/command"
+        - name: "action_topic"
+          value: "/control_history/action"
+        - name: "result_topic"
+          value: "/control_history/result"
+        - name: "checked_point_topic"
+          value: "/control_history/checked_point"
+        - name: "intervention_hold_sec"
+          value: 1.0
 
   - node:
       pkg: "joy"

@@ -29,14 +29,17 @@ ArucoMissionNode::ArucoMissionNode(const rclcpp::NodeOptions & options)
   this->declare_parameter("target_marker_id_min", 0);  // 互換用
   this->declare_parameter("target_marker_id_max", 0);  // 互換用
   this->declare_parameter("approach_distance", 1.0);
-  this->declare_parameter("linear_speed", 0.2);
+  this->declare_parameter("linear_speed", 0.5);
   this->declare_parameter("angular_speed", 0.5);
   this->declare_parameter("approach_angular_gain", 1.0);
   this->declare_parameter("max_approach_angular_speed", 0.35);
   this->declare_parameter("search_turn_count", 1.0);
-  this->declare_parameter("search_recovery_speed", 0.15);
+  this->declare_parameter("search_recovery_speed", 0.5);
   this->declare_parameter("search_recovery_duration", 1.0);
-  this->declare_parameter("target_lost_cycles", 20);
+  this->declare_parameter("turning_duration_sec", -1.0);
+  this->declare_parameter("orbiting_duration_sec", -1.0);
+  this->declare_parameter("aruco_message_timeout_sec", 1.0);
+  this->declare_parameter("target_lost_cycles", 5);
   this->declare_parameter("auto_start", false);
   this->declare_parameter("control_history_command_topic", "/control_history/command");
   this->declare_parameter("control_history_action_topic", "/control_history/action");
@@ -168,9 +171,14 @@ ArucoMissionNode::ArucoMissionNode(const rclcpp::NodeOptions & options)
   search_turn_count_ = this->get_parameter("search_turn_count").as_double();
   search_recovery_speed_ = this->get_parameter("search_recovery_speed").as_double();
   search_recovery_duration_ = this->get_parameter("search_recovery_duration").as_double();
+  turning_duration_sec_ = this->get_parameter("turning_duration_sec").as_double();
+  orbiting_duration_sec_ = this->get_parameter("orbiting_duration_sec").as_double();
+  aruco_message_timeout_sec_ = this->get_parameter("aruco_message_timeout_sec").as_double();
+  aruco_message_timeout_sec_ = std::max(0.05, aruco_message_timeout_sec_);
   target_lost_cycles_ = this->get_parameter("target_lost_cycles").as_int();
   target_lost_cycles_ = std::max<long>(1, target_lost_cycles_);
   target_lost_count_ = 0;
+  aruco_msg_received_ = false;
   auto_start_ = this->get_parameter("auto_start").as_bool();
   mission_enabled_ = auto_start_;
   publish_stop_once_ = false;
@@ -209,6 +217,7 @@ ArucoMissionNode::ArucoMissionNode(const rclcpp::NodeOptions & options)
   // Timer
   timer_ = this->create_wall_timer(100ms, std::bind(&ArucoMissionNode::control_loop, this));
   search_start_time_ = this->now();
+  last_aruco_msg_time_ = this->now();
 
   std::string missions_csv_path = this->get_parameter("missions_csv_path").as_string();
   if (missions_csv_path.empty()) {
@@ -238,6 +247,10 @@ ArucoMissionNode::ArucoMissionNode(const rclcpp::NodeOptions & options)
   RCLCPP_INFO(
     this->get_logger(), "non_goal_marker_ids: %s", ids_to_string(non_goal_marker_ids_).c_str());
   RCLCPP_INFO(this->get_logger(), "target_lost_cycles: %ld", target_lost_cycles_);
+  RCLCPP_INFO(this->get_logger(), "aruco_message_timeout_sec: %.3f", aruco_message_timeout_sec_);
+  RCLCPP_INFO(
+    this->get_logger(), "turning_duration_sec: %.3f, orbiting_duration_sec: %.3f",
+    turning_duration_sec_, orbiting_duration_sec_);
   RCLCPP_INFO(
     this->get_logger(), "approach_angular_gain: %.3f, max_approach_angular_speed: %.3f",
     approach_angular_gain_, max_approach_angular_speed_);
@@ -286,7 +299,7 @@ bool ArucoMissionNode::should_track_marker_id(uint16_t marker_id) const
 
 int ArucoMissionNode::find_marker_index_by_id(uint16_t marker_id) const
 {
-  if (!last_markers_msg_) {
+  if (!has_fresh_aruco_message()) {
     return -1;
   }
 
@@ -301,7 +314,7 @@ int ArucoMissionNode::find_marker_index_by_id(uint16_t marker_id) const
 
 int ArucoMissionNode::find_best_target_marker_index() const
 {
-  if (!last_markers_msg_) {
+  if (!has_fresh_aruco_message()) {
     return -1;
   }
 
@@ -365,6 +378,16 @@ std::string ArucoMissionNode::ids_to_string(const std::vector<long> & ids) const
   }
   stream << "]";
   return stream.str();
+}
+
+bool ArucoMissionNode::has_fresh_aruco_message() const
+{
+  if (!aruco_msg_received_ || !last_markers_msg_) {
+    return false;
+  }
+
+  const double elapsed = (this->now() - last_aruco_msg_time_).seconds();
+  return elapsed <= aruco_message_timeout_sec_;
 }
 
 void ArucoMissionNode::finish_orbit_and_select_next()
@@ -616,6 +639,8 @@ void ArucoMissionNode::publish_control_history(
 void ArucoMissionNode::aruco_callback(const aruco_opencv_msgs::msg::ArucoDetection::SharedPtr msg)
 {
   last_markers_msg_ = msg;
+  aruco_msg_received_ = true;
+  last_aruco_msg_time_ = this->now();
 }
 
 void ArucoMissionNode::start_trigger_callback(const std_msgs::msg::Bool::SharedPtr msg)
@@ -759,7 +784,7 @@ void ArucoMissionNode::do_approaching(geometry_msgs::msg::Twist & msg)
     return;
   }
 
-  if (!last_markers_msg_) {
+  if (!has_fresh_aruco_message()) {
     target_lost_count_++;
     if (target_lost_count_ >= target_lost_cycles_) {
       search_start_time_ = this->now();
@@ -830,7 +855,8 @@ void ArucoMissionNode::do_approaching(geometry_msgs::msg::Twist & msg)
 void ArucoMissionNode::do_turning(geometry_msgs::msg::Twist & msg)
 {
   const double safe_turn_speed = std::max(std::abs(angular_speed_), 1e-3);
-  double turn_duration = (M_PI / 2.0) / safe_turn_speed;
+  const double turn_duration =
+    (turning_duration_sec_ > 0.0) ? turning_duration_sec_ : (M_PI / 2.0) / safe_turn_speed;
   auto elapsed = (this->now() - turn_start_time_).seconds();
 
   if (elapsed > turn_duration) {
@@ -840,7 +866,7 @@ void ArucoMissionNode::do_turning(geometry_msgs::msg::Twist & msg)
     state_ = State::ORBITING;
   } else {
     msg.linear.x = 0.0;
-    msg.angular.z = angular_speed_;
+    msg.angular.z = angular_speed_ * -1.0;  // Turn in the opposite direction of the angle to marker
   }
 }
 
@@ -848,7 +874,9 @@ void ArucoMissionNode::do_orbiting(geometry_msgs::msg::Twist & msg)
 {
   const double safe_linear_speed = std::max(std::abs(linear_speed_), 1e-3);
   const double safe_approach_distance = std::max(std::abs(approach_distance_), 1e-3);
-  double orbit_duration = 2.0 * M_PI * safe_approach_distance / safe_linear_speed;
+  const double orbit_duration =
+    (orbiting_duration_sec_ > 0.0) ? orbiting_duration_sec_ :
+    (2.0 * M_PI * safe_approach_distance / safe_linear_speed);
   auto elapsed = (this->now() - orbit_start_time_).seconds();
 
   if (elapsed > orbit_duration) {

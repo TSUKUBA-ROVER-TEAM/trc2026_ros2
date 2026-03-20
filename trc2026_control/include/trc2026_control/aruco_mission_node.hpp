@@ -49,6 +49,7 @@ private:
   size_t remaining_non_goal_targets() const;
   size_t remaining_goal_targets() const;
   std::string ids_to_string(const std::vector<long> & ids) const;
+  bool has_fresh_aruco_message() const;
   void finish_orbit_and_select_next();
   std::string state_to_string(State state) const;
   std::string current_sequence_string() const;
@@ -91,6 +92,9 @@ private:
   double search_turn_count_;
   double search_recovery_speed_;
   double search_recovery_duration_;
+  double turning_duration_sec_;
+  double orbiting_duration_sec_;
+  double aruco_message_timeout_sec_;
   long target_lost_cycles_;
   long target_lost_count_;
   bool auto_start_;
@@ -108,6 +112,7 @@ private:
   rclcpp::Subscription<aruco_opencv_msgs::msg::ArucoDetection>::SharedPtr aruco_sub_;
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr start_trigger_sub_;
   aruco_opencv_msgs::msg::ArucoDetection::SharedPtr last_markers_msg_;
+  bool aruco_msg_received_;
 
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
@@ -116,6 +121,7 @@ private:
   rclcpp::Time search_recovery_start_time_;
   rclcpp::Time turn_start_time_;
   rclcpp::Time orbit_start_time_;
+  rclcpp::Time last_aruco_msg_time_;
 
   std::unordered_map<long, std::pair<double, double>> marker_gps_map_;
 };
