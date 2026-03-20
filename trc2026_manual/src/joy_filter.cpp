@@ -37,6 +37,11 @@ void JoyFilter::primary_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
     filtered_msg->axes[4] = msg->axes[3] * -1.0;
   }
 
+  if (msg->buttons.size() > 2) {
+    filtered_msg->buttons[2] = msg->buttons[3];
+    filtered_msg->buttons[3] = msg->buttons[2];
+  }
+
   if (msg->axes.size() > 7) {
     filtered_msg->axes[7] = msg->axes[7];
   }
