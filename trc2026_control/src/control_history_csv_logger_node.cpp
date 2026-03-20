@@ -120,7 +120,12 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
 : Node("control_history_csv_logger_node", options),
   current_lat_(std::numeric_limits<double>::quiet_NaN()),
   current_lon_(std::numeric_limits<double>::quiet_NaN()),
+  current_odom_x_(std::numeric_limits<double>::quiet_NaN()),
+  current_odom_y_(std::numeric_limits<double>::quiet_NaN()),
   current_azimuth_deg_(std::numeric_limits<double>::quiet_NaN()),
+  current_odom_linear_x_(std::numeric_limits<double>::quiet_NaN()),
+  current_odom_linear_y_(std::numeric_limits<double>::quiet_NaN()),
+  current_odom_angular_z_(std::numeric_limits<double>::quiet_NaN()),
   target_lat_(std::numeric_limits<double>::quiet_NaN()),
   target_lon_(std::numeric_limits<double>::quiet_NaN()),
   target_azimuth_deg_(std::numeric_limits<double>::quiet_NaN()),
@@ -141,6 +146,8 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
   this->declare_parameter<bool>("include_checked_point", true);
   this->declare_parameter<bool>("include_action_result", true);
   this->declare_parameter<bool>("include_autonomy", true);
+  this->declare_parameter<bool>("include_odom_columns", false);
+  this->declare_parameter<bool>("include_cmd_vel_columns", false);
 
   this->declare_parameter<std::string>("gps_topic", "/gps/fix");
   this->declare_parameter<std::string>("odom_topic", "/odom");
@@ -155,6 +162,7 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
   this->declare_parameter<std::string>("target_latitude_topic", "/control_history/target_latitude");
   this->declare_parameter<std::string>(
     "target_longitude_topic", "/control_history/target_longitude");
+  this->declare_parameter<std::string>("target_azimuth_topic", "/control_history/target_azimuth");
 
   this->declare_parameter<double>("target_latitude", std::numeric_limits<double>::quiet_NaN());
   this->declare_parameter<double>("target_longitude", std::numeric_limits<double>::quiet_NaN());
@@ -175,6 +183,8 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
   include_checked_point_ = this->get_parameter("include_checked_point").as_bool();
   include_action_result_ = this->get_parameter("include_action_result").as_bool();
   include_autonomy_ = this->get_parameter("include_autonomy").as_bool();
+  include_odom_columns_ = this->get_parameter("include_odom_columns").as_bool();
+  include_cmd_vel_columns_ = this->get_parameter("include_cmd_vel_columns").as_bool();
   aruco_start_enabled_ = false;
 
   target_lat_ = this->get_parameter("target_latitude").as_double();
@@ -196,6 +206,7 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
   const auto checked_point_topic = this->get_parameter("checked_point_topic").as_string();
   const auto target_latitude_topic = this->get_parameter("target_latitude_topic").as_string();
   const auto target_longitude_topic = this->get_parameter("target_longitude_topic").as_string();
+  const auto target_azimuth_topic = this->get_parameter("target_azimuth_topic").as_string();
 
   const rclcpp::QoS sensor_qos = rclcpp::SensorDataQoS();
   gps_sub_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
@@ -234,6 +245,9 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
   target_longitude_sub_ = this->create_subscription<std_msgs::msg::Float64>(
     target_longitude_topic, 10,
     std::bind(&ControlHistoryCsvLoggerNode::on_target_longitude, this, std::placeholders::_1));
+  target_azimuth_sub_ = this->create_subscription<std_msgs::msg::Float64>(
+    target_azimuth_topic, 10,
+    std::bind(&ControlHistoryCsvLoggerNode::on_target_azimuth, this, std::placeholders::_1));
 
   last_manual_cmd_time_ = this->now() - rclcpp::Duration::from_seconds(9999.0);
 
@@ -274,6 +288,18 @@ void ControlHistoryCsvLoggerNode::open_csv_and_write_header_if_needed()
     if (include_azimuth_columns_) {
       header.emplace_back("Azimuth");
       header.emplace_back("Target-Azimuth");
+    }
+    if (include_odom_columns_) {
+      header.emplace_back("Odom-X");
+      header.emplace_back("Odom-Y");
+      header.emplace_back("Odom-Linear-X");
+      header.emplace_back("Odom-Linear-Y");
+      header.emplace_back("Odom-Angular-Z");
+    }
+    if (include_cmd_vel_columns_) {
+      header.emplace_back("CmdVel-Linear-X");
+      header.emplace_back("CmdVel-Linear-Y");
+      header.emplace_back("CmdVel-Angular-Z");
     }
     if (include_checked_point_) {
       header.emplace_back("Checked-point");
@@ -355,8 +381,13 @@ void ControlHistoryCsvLoggerNode::on_gps(const sensor_msgs::msg::NavSatFix::Shar
 
 void ControlHistoryCsvLoggerNode::on_odom(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
+  current_odom_x_ = msg->pose.pose.position.x;
+  current_odom_y_ = msg->pose.pose.position.y;
   const double yaw = tf2::getYaw(msg->pose.pose.orientation);
   current_azimuth_deg_ = yaw_to_azimuth_deg(yaw);
+  current_odom_linear_x_ = msg->twist.twist.linear.x;
+  current_odom_linear_y_ = msg->twist.twist.linear.y;
+  current_odom_angular_z_ = msg->twist.twist.angular.z;
 }
 
 void ControlHistoryCsvLoggerNode::on_cmd_vel_out(const geometry_msgs::msg::Twist::SharedPtr msg)
@@ -370,6 +401,7 @@ void ControlHistoryCsvLoggerNode::on_manual_cmd_vel(const geometry_msgs::msg::Tw
 {
   const double speed = std::hypot(msg->linear.x, msg->linear.y);
   if (speed > 1e-4 || std::fabs(msg->angular.z) > 1e-4) {
+    aruco_start_enabled_ = false;
     last_manual_cmd_time_ = this->now();
     last_command_ = "manual intervention command";
     last_action_ = "[NAVI] manual override";
@@ -381,6 +413,7 @@ void ControlHistoryCsvLoggerNode::on_auto_cmd_vel(const geometry_msgs::msg::Twis
 {
   const double speed = std::hypot(msg->linear.x, msg->linear.y);
   if (speed > 1e-4 || std::fabs(msg->angular.z) > 1e-4) {
+    aruco_start_enabled_ = true;
     last_command_ = "autonomy navigation command";
     last_action_ = "[NAVI] autonomy move";
     last_result_ = "autonomy command accepted";
@@ -431,6 +464,11 @@ void ControlHistoryCsvLoggerNode::on_target_longitude(const std_msgs::msg::Float
   target_lon_ = msg->data;
 }
 
+void ControlHistoryCsvLoggerNode::on_target_azimuth(const std_msgs::msg::Float64::SharedPtr msg)
+{
+  target_azimuth_deg_ = msg->data;
+}
+
 void ControlHistoryCsvLoggerNode::on_timer()
 {
   std::vector<std::string> row;
@@ -445,6 +483,18 @@ void ControlHistoryCsvLoggerNode::on_timer()
   if (include_azimuth_columns_) {
     row.emplace_back(format_double(current_azimuth_deg_, 2));
     row.emplace_back(format_double(target_azimuth_deg_, 2));
+  }
+  if (include_odom_columns_) {
+    row.emplace_back(format_double(current_odom_x_, 3));
+    row.emplace_back(format_double(current_odom_y_, 3));
+    row.emplace_back(format_double(current_odom_linear_x_, 3));
+    row.emplace_back(format_double(current_odom_linear_y_, 3));
+    row.emplace_back(format_double(current_odom_angular_z_, 3));
+  }
+  if (include_cmd_vel_columns_) {
+    row.emplace_back(format_double(last_cmd_linear_.x, 3));
+    row.emplace_back(format_double(last_cmd_linear_.y, 3));
+    row.emplace_back(format_double(last_cmd_angular_, 3));
   }
   if (include_checked_point_) {
     row.emplace_back(checked_point_);

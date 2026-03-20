@@ -49,6 +49,7 @@ ArucoMissionNode::ArucoMissionNode(const rclcpp::NodeOptions & options)
     "missions_csv_path", "");
   this->declare_parameter("target_latitude_topic", "/control_history/target_latitude");
   this->declare_parameter("target_longitude_topic", "/control_history/target_longitude");
+  this->declare_parameter("target_azimuth_topic", "/control_history/target_azimuth");
 
   const auto to_long_vector = [](const std::vector<int64_t> & input) {
     std::vector<long> output;
@@ -196,6 +197,7 @@ ArucoMissionNode::ArucoMissionNode(const rclcpp::NodeOptions & options)
     this->get_parameter("control_history_checked_point_topic").as_string();
   const auto target_latitude_topic = this->get_parameter("target_latitude_topic").as_string();
   const auto target_longitude_topic = this->get_parameter("target_longitude_topic").as_string();
+  const auto target_azimuth_topic = this->get_parameter("target_azimuth_topic").as_string();
   command_pub_ = this->create_publisher<std_msgs::msg::String>(control_history_command_topic, 10);
   action_pub_ = this->create_publisher<std_msgs::msg::String>(control_history_action_topic, 10);
   result_pub_ = this->create_publisher<std_msgs::msg::String>(control_history_result_topic, 10);
@@ -204,6 +206,7 @@ ArucoMissionNode::ArucoMissionNode(const rclcpp::NodeOptions & options)
   target_latitude_pub_ = this->create_publisher<std_msgs::msg::Float64>(target_latitude_topic, 10);
   target_longitude_pub_ =
     this->create_publisher<std_msgs::msg::Float64>(target_longitude_topic, 10);
+  target_azimuth_pub_ = this->create_publisher<std_msgs::msg::Float64>(target_azimuth_topic, 10);
   aruco_sub_ = this->create_subscription<aruco_opencv_msgs::msg::ArucoDetection>(
     "aruco_detections", 10,
     std::bind(&ArucoMissionNode::aruco_callback, this, std::placeholders::_1));
@@ -613,6 +616,13 @@ void ArucoMissionNode::publish_target_coordinates_for_marker(long marker_id)
   target_longitude_pub_->publish(longitude_msg);
 }
 
+void ArucoMissionNode::publish_target_azimuth(double target_azimuth_deg)
+{
+  std_msgs::msg::Float64 azimuth_msg;
+  azimuth_msg.data = target_azimuth_deg;
+  target_azimuth_pub_->publish(azimuth_msg);
+}
+
 void ArucoMissionNode::publish_control_history(
   const std::string & command, const std::string & action, const std::string & result,
   bool publish_checked_point)
@@ -709,7 +719,7 @@ void ArucoMissionNode::control_loop()
   cmd_vel_pub_->publish(drive_msg);
   publish_control_history(
     command_string_for_state(state_, drive_msg), action_string_for_state(state_),
-    result_string_for_state(state_, drive_msg), false);
+    result_string_for_state(state_, drive_msg), true);
 }
 
 void ArucoMissionNode::do_searching(geometry_msgs::msg::Twist & msg)
@@ -828,6 +838,7 @@ void ArucoMissionNode::do_approaching(geometry_msgs::msg::Twist & msg)
     std::pow(pose.position.x, 2) + std::pow(pose.position.y, 2) + std::pow(pose.position.z, 2));
 
   double angle_to_marker = std::atan2(pose.position.x, pose.position.z) * -1.0;
+  publish_target_azimuth(angle_to_marker * 180.0 / M_PI);
   double angular_cmd = angle_to_marker * approach_angular_gain_;
   angular_cmd = std::clamp(angular_cmd, -max_approach_angular_speed_, max_approach_angular_speed_);
 

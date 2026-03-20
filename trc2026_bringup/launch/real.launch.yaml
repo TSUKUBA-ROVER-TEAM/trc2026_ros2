@@ -112,15 +112,17 @@ launch:
         - name: "search_recovery_duration"
           value: 3.0
         - name: "auto_start"
-          value: false
+          value: true
         - name: "linear_speed"
           value: 0.6
         - name: "angular_speed"
           value: 0.8
         - name: "turning_duration_sec"
-          value: 4.0
+          value: 3.0
         - name: "orbiting_duration_sec"
           value: 25.0
+        - name: "target_azimuth_topic"
+          value: "/control_history/target_azimuth"
 
   - node:
       pkg: "trc2026_control"
@@ -144,6 +146,10 @@ launch:
           value: true
         - name: "include_autonomy"
           value: true
+        - name: "include_odom_columns"
+          value: true
+        - name: "include_cmd_vel_columns"
+          value: true
         - name: "gps_topic"
           value: "/gps/fix"
         - name: "odom_topic"
@@ -164,6 +170,8 @@ launch:
           value: "/control_history/result"
         - name: "checked_point_topic"
           value: "/control_history/checked_point"
+        - name: "target_azimuth_topic"
+          value: "/control_history/target_azimuth"
         - name: "intervention_hold_sec"
           value: 1.0
 

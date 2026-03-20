@@ -43,6 +43,7 @@ private:
   void on_checked_point(const std_msgs::msg::String::SharedPtr msg);
   void on_target_latitude(const std_msgs::msg::Float64::SharedPtr msg);
   void on_target_longitude(const std_msgs::msg::Float64::SharedPtr msg);
+  void on_target_azimuth(const std_msgs::msg::Float64::SharedPtr msg);
   void on_timer();
 
   std::ofstream csv_;
@@ -56,12 +57,19 @@ private:
   bool include_checked_point_;
   bool include_action_result_;
   bool include_autonomy_;
+  bool include_odom_columns_;
+  bool include_cmd_vel_columns_;
   double intervention_hold_sec_;
   bool aruco_start_enabled_;
 
   double current_lat_;
   double current_lon_;
+  double current_odom_x_;
+  double current_odom_y_;
   double current_azimuth_deg_;
+  double current_odom_linear_x_;
+  double current_odom_linear_y_;
+  double current_odom_angular_z_;
   double target_lat_;
   double target_lon_;
   double target_azimuth_deg_;
@@ -86,6 +94,7 @@ private:
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr checked_point_sub_;
   rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr target_latitude_sub_;
   rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr target_longitude_sub_;
+  rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr target_azimuth_sub_;
   rclcpp::TimerBase::SharedPtr timer_;
 };
 

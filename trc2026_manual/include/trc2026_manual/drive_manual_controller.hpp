@@ -52,6 +52,8 @@ private:
   double scale_linear_x_;
   double scale_linear_y_;
   double scale_angular_z_;
+  bool had_manual_motion_;
+  bool timeout_stop_reported_;
 
   /*
    * @brief 定期送信タイマーコールバック

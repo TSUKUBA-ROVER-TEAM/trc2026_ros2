@@ -39,6 +39,8 @@ DriveManualController::DriveManualController(const rclcpp::NodeOptions & options
   this->get_parameter("scale_linear_y", scale_linear_y_);
   this->get_parameter("scale_angular_z", scale_angular_z_);
   this->get_parameter("joy_timeout", joy_timeout_sec_);
+  had_manual_motion_ = false;
+  timeout_stop_reported_ = false;
 
   last_joy_time_ = this->now();
 
@@ -53,6 +55,7 @@ DriveManualController::DriveManualController(const rclcpp::NodeOptions & options
 void DriveManualController::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
 {
   last_joy_time_ = this->now();
+  timeout_stop_reported_ = false;
 
   last_cmd_vel_.linear.x = msg->axes[axis_linear_x_] * scale_linear_x_;
   last_cmd_vel_.linear.y = msg->axes[axis_linear_y_] * scale_linear_y_;
@@ -67,9 +70,13 @@ void DriveManualController::publish_timer_callback()
     auto zero_msg = geometry_msgs::msg::Twist();
     cmd_vel_publisher_->publish(zero_msg);
     last_cmd_vel_ = geometry_msgs::msg::Twist();
-    publish_control_history(
-      "manual drive timeout stop", "[NAVI] manual stop",
-      "manual joystick timeout; stop command sent");
+    if (had_manual_motion_ && !timeout_stop_reported_) {
+      publish_control_history(
+        "manual drive timeout stop", "[NAVI] manual stop",
+        "manual joystick timeout; stop command sent");
+      timeout_stop_reported_ = true;
+      had_manual_motion_ = false;
+    }
   } else {
     cmd_vel_publisher_->publish(last_cmd_vel_);
 
@@ -79,11 +86,13 @@ void DriveManualController::publish_timer_callback()
                    << " wz=" << last_cmd_vel_.angular.z;
 
     const double speed = std::hypot(last_cmd_vel_.linear.x, last_cmd_vel_.linear.y);
-    const std::string result = (speed > 1e-4 || std::fabs(last_cmd_vel_.angular.z) > 1e-4)
-                                 ? "manual drive command sent"
-                                 : "manual neutral command sent";
+    const bool manual_motion = (speed > 1e-4 || std::fabs(last_cmd_vel_.angular.z) > 1e-4);
 
-    publish_control_history(command_stream.str(), "[NAVI] manual drive", result);
+    if (manual_motion) {
+      publish_control_history(
+        command_stream.str(), "[NAVI] manual drive", "manual drive command sent");
+      had_manual_motion_ = true;
+    }
   }
 }
 

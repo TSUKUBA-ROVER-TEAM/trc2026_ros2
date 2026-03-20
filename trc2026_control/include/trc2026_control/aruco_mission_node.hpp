@@ -59,6 +59,7 @@ private:
   std::string result_string_for_state(State state, const geometry_msgs::msg::Twist & msg) const;
   void load_missions_csv(const std::string & csv_path);
   void publish_target_coordinates_for_marker(long marker_id);
+  void publish_target_azimuth(double target_azimuth_deg);
   void publish_control_history(
     const std::string & command, const std::string & action, const std::string & result,
     bool publish_checked_point);
@@ -109,6 +110,7 @@ private:
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr checked_point_pub_;
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr target_latitude_pub_;
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr target_longitude_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr target_azimuth_pub_;
   rclcpp::Subscription<aruco_opencv_msgs::msg::ArucoDetection>::SharedPtr aruco_sub_;
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr start_trigger_sub_;
   aruco_opencv_msgs::msg::ArucoDetection::SharedPtr last_markers_msg_;
