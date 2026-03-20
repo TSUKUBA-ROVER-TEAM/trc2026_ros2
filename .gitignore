@@ -12,3 +12,4 @@ src/uros/*
 src/ros2.repos
 
 control_history_*.csv
+trc2026_control_history_*.csv

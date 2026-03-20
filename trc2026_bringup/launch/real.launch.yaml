@@ -1,3 +1,4 @@
+
 launch:
   - node:
       pkg: foxglove_bridge
@@ -40,7 +41,7 @@ launch:
         - name: "publish_odom_tf"
           value: false
         - name: "gear_ratio_scale"
-          value: 0.6981 # (36.0 / 19.1) * (20.0 / 54.0) = 0.6981 (M3508 + 外部減速20:54用)
+          value: 0.6981 
 
   - node:
       pkg: "micro_ros_agent"
@@ -95,12 +96,13 @@ launch:
         - from: "start"
           to: "/aruco_mission/start"
       param:
-        - name: "target_marker_id_min"
-          value: 0
-        - name: "target_marker_id_max"
-          value: 9
+        - name: "target_marker_count"
+          value: 20
+        - name: "target_marker_ids"
+          value: [345, 78, 912, 456, 123, 689, 27, 541, 804, 399, 250, 967, 618, 72, 731, 158, 884, 436, 205, 790]
         - name: "target_lost_cycles"
           value: 20
+          
         - name: "approach_distance"
           value: 2.0
         - name: "search_turn_count"
@@ -109,12 +111,8 @@ launch:
           value: 0.6
         - name: "search_recovery_duration"
           value: 3.0
-        - name: "turning_duration_sec"
-          value: -1.0
-        - name: "orbiting_duration_sec"
-          value: -1.0
         - name: "auto_start"
-          value: true
+          value: false
         - name: "linear_speed"
           value: 0.6
         - name: "angular_speed"
@@ -124,7 +122,6 @@ launch:
         - name: "orbiting_duration_sec"
           value: 25.0
 
-          
   - node:
       pkg: "trc2026_control"
       exec: "control_history_csv_logger_node"
@@ -136,7 +133,7 @@ launch:
         - name: "append"
           value: true
         - name: "write_interval_sec"
-          value: 0.2
+          value: 1.0
         - name: "include_target_columns"
           value: true
         - name: "include_azimuth_columns"
@@ -215,16 +212,10 @@ launch:
         - from: "/imu/data_raw"
           to: "/imu/data_raw_orig"
 
-  # IMUバイアス・反転補正
   - node:
       pkg: "trc2026_bringup"
       exec: "imu_relay_node.py"
       name: "imu_relay_node"
-      remap:
-        - from: "/imu/data_raw_orig"
-          to: "/imu/data_raw_orig"
-        - from: "/imu/data_raw"
-          to: "/imu/data_raw"
 
   - node:
       pkg: "imu_filter_madgwick"
@@ -237,13 +228,7 @@ launch:
           value: false
         - name: "world_frame"
           value: "enu"
-      remap:
-        - from: "/imu/data_raw"
-          to: "/imu/data_raw"
-        - from: "/imu/mag"
-          to: "/imu/mag_calibrated"
 
-  # 磁気補正
   - node:
       pkg: "trc2026_bringup"
       exec: "mag_relay_node.py"
@@ -303,8 +288,7 @@ launch:
           value: "30"
         - name: "color_format"
           value: "jpeg"
-    
-  # ArUco Marker Tracker (aruco_opencv)
+
   - node:
       pkg: "aruco_opencv"
       exec: "aruco_tracker_autostart"
@@ -315,7 +299,7 @@ launch:
         - name: "image_sub_compressed"
           value: true
         - name: "marker_dict"
-          value: "5X5_1000"
+          value: "7X7_1000"
         - name: "image_is_rectified"
           value: true
         - name: "marker_size"

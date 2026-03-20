@@ -1,8 +1,5 @@
 #include "trc2026_manual/arm_manual_controller.hpp"
 
-#include <cmath>
-#include <sstream>
-
 namespace trc2026_manual
 {
 ArmManualController::ArmManualController(const rclcpp::NodeOptions & options)
@@ -11,23 +8,12 @@ ArmManualController::ArmManualController(const rclcpp::NodeOptions & options)
   joint_jog_publisher_ = this->create_publisher<control_msgs::msg::JointJog>("/joint_jog", 1);
   arm_command_publisher_ =
     this->create_publisher<std_msgs::msg::Float64MultiArray>("/arm_controller/commands", 1);
-  arm_limit_switch_subscriber_ = this->create_subscription<std_msgs::msg::Bool>(
-    "/arm_controller/limit_switch", 1,
-    [this](const std_msgs::msg::Bool::SharedPtr msg) { arm_limit_reached_ = msg->data; });
+  arm_limit_switch_subscriber_ =
+    this->create_subscription<std_msgs::msg::Bool>("/arm_controller/limit_switch", 1,
+      [this](const std_msgs::msg::Bool::SharedPtr msg) {
+        arm_limit_reached_ = msg->data;
+      });
   science_command_publisher_ = this->create_publisher<std_msgs::msg::Int16>("/science/command", 1);
-  this->declare_parameter<std::string>("control_history_command_topic", "/control_history/command");
-  this->declare_parameter<std::string>("control_history_action_topic", "/control_history/action");
-  this->declare_parameter<std::string>("control_history_result_topic", "/control_history/result");
-  this->declare_parameter<std::string>(
-    "control_history_checked_point_topic", "/control_history/checked_point");
-  command_publisher_ = this->create_publisher<std_msgs::msg::String>(
-    this->get_parameter("control_history_command_topic").as_string(), 10);
-  action_publisher_ = this->create_publisher<std_msgs::msg::String>(
-    this->get_parameter("control_history_action_topic").as_string(), 10);
-  result_publisher_ = this->create_publisher<std_msgs::msg::String>(
-    this->get_parameter("control_history_result_topic").as_string(), 10);
-  checked_point_publisher_ = this->create_publisher<std_msgs::msg::String>(
-    this->get_parameter("control_history_checked_point_topic").as_string(), 10);
 
   this->declare_parameter(
     "joint_names",
@@ -39,7 +25,7 @@ ArmManualController::ArmManualController(const rclcpp::NodeOptions & options)
   this->declare_parameter("j1_scale", 8.0);
   this->declare_parameter("hand_scale", 10.0);
   this->declare_parameter("deadzone", 0.01);
-  this->declare_parameter("joy_timeout", 5.0);
+  this->declare_parameter("joy_timeout",5.0);
 
   this->get_parameter("joint_names", joint_names_);
   this->get_parameter("button_indices", button_indices_);
@@ -56,11 +42,11 @@ ArmManualController::ArmManualController(const rclcpp::NodeOptions & options)
   last_arm_cmd_.data.resize(2, 0.0);
 
   publish_timer_ = this->create_wall_timer(
-    std::chrono::milliseconds(50), std::bind(&ArmManualController::publish_timer_callback, this));
+    std::chrono::milliseconds(50),
+    std::bind(&ArmManualController::publish_timer_callback, this));
 
-  RCLCPP_INFO(
-    this->get_logger(), "Arm Manual Controller Node has been started. joy_timeout: %.2f s",
-    joy_timeout_sec_);
+  RCLCPP_INFO(this->get_logger(),
+    "Arm Manual Controller Node has been started. joy_timeout: %.2f s", joy_timeout_sec_);
 }
 
 void ArmManualController::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
@@ -82,8 +68,9 @@ void ArmManualController::joy_callback(const sensor_msgs::msg::Joy::SharedPtr ms
             joint_jog_msg.joint_names.push_back(joint_names_[i]);
             joint_jog_msg.velocities.push_back(axis_val * joint_jog_scale_);
             RCLCPP_DEBUG_THROTTLE(
-              this->get_logger(), *this->get_clock(), 1000, "Jogging joint %s with velocity %.3f",
-              joint_names_[i].c_str(), axis_val * joint_jog_scale_);
+              this->get_logger(), *this->get_clock(), 1000,
+              "Jogging joint %s with velocity %.3f", joint_names_[i].c_str(),
+              axis_val * joint_jog_scale_);
           }
         }
       }
@@ -143,8 +130,7 @@ void ArmManualController::publish_timer_callback()
 
   arm_command_publisher_->publish(arm_cmd_msg);
 
-  if (
-    science_cmd != last_published_science_cmd_ || (now - last_science_cmd_time_).seconds() > 0.1) {
+  if (science_cmd != last_published_science_cmd_ || (now - last_science_cmd_time_).seconds() > 0.1) {
     auto science_cmd_msg = std::make_shared<std_msgs::msg::Int16>();
     science_cmd_msg->data = science_cmd;
     science_command_publisher_->publish(*science_cmd_msg);
@@ -152,37 +138,6 @@ void ArmManualController::publish_timer_callback()
     last_published_science_cmd_ = science_cmd;
     last_science_cmd_time_ = now;
   }
-
-  std::ostringstream command_stream;
-  command_stream << "manual arm hand=" << arm_cmd_msg.data[0] << " j1=" << arm_cmd_msg.data[1]
-                 << " science=" << science_cmd;
-
-  const bool active = (std::fabs(arm_cmd_msg.data[0]) > 1e-6) ||
-                      (std::fabs(arm_cmd_msg.data[1]) > 1e-6) || (std::abs(science_cmd) > 0) ||
-                      has_joint_jog_cmd_;
-
-  const std::string result = active ? "manual arm command sent" : "manual arm idle";
-  publish_control_history(command_stream.str(), "[ARM] manual operation", result);
-}
-
-void ArmManualController::publish_control_history(
-  const std::string & command, const std::string & action, const std::string & result)
-{
-  std_msgs::msg::String command_msg;
-  command_msg.data = command;
-  command_publisher_->publish(command_msg);
-
-  std_msgs::msg::String action_msg;
-  action_msg.data = action;
-  action_publisher_->publish(action_msg);
-
-  std_msgs::msg::String result_msg;
-  result_msg.data = result;
-  result_publisher_->publish(result_msg);
-
-  std_msgs::msg::String checked_point_msg;
-  checked_point_msg.data = "";
-  checked_point_publisher_->publish(checked_point_msg);
 }
 }  // namespace trc2026_manual
 
