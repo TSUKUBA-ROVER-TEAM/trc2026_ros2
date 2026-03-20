@@ -111,6 +111,54 @@ std::string with_timestamp_suffix(const std::string & path, const std::string & 
   return stem + "_" + timestamp + ext;
 }
 
+std::string format_marker_ids(const aruco_opencv_msgs::msg::ArucoDetection::SharedPtr msg)
+{
+  if (msg->markers.empty()) {
+    return "[]";
+  }
+
+  std::vector<uint16_t> ids;
+  ids.reserve(msg->markers.size());
+  for (const auto & marker : msg->markers) {
+    ids.push_back(marker.marker_id);
+  }
+  std::sort(ids.begin(), ids.end());
+  ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+
+  std::ostringstream stream;
+  stream << "[";
+  for (size_t i = 0; i < ids.size(); ++i) {
+    stream << ids[i];
+    if (i + 1 < ids.size()) {
+      stream << "|";
+    }
+  }
+  stream << "]";
+  return stream.str();
+}
+
+std::string format_marker_poses(const aruco_opencv_msgs::msg::ArucoDetection::SharedPtr msg)
+{
+  if (msg->markers.empty()) {
+    return "[]";
+  }
+
+  std::ostringstream stream;
+  stream << "[";
+  for (size_t i = 0; i < msg->markers.size(); ++i) {
+    const auto & marker = msg->markers[i];
+    stream << marker.marker_id << ":"
+           << format_double(marker.pose.position.x, 3) << ":"
+           << format_double(marker.pose.position.y, 3) << ":"
+           << format_double(marker.pose.position.z, 3);
+    if (i + 1 < msg->markers.size()) {
+      stream << "|";
+    }
+  }
+  stream << "]";
+  return stream.str();
+}
+
 }  // namespace
 
 namespace trc2026_control
@@ -129,7 +177,10 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
   target_lat_(std::numeric_limits<double>::quiet_NaN()),
   target_lon_(std::numeric_limits<double>::quiet_NaN()),
   target_azimuth_deg_(std::numeric_limits<double>::quiet_NaN()),
-  last_cmd_angular_(0.0)
+  last_cmd_angular_(0.0),
+  aruco_marker_count_(0),
+  aruco_marker_ids_("[]"),
+  aruco_marker_poses_("[]")
 {
   last_cmd_linear_.x = 0.0;
   last_cmd_linear_.y = 0.0;
@@ -148,6 +199,7 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
   this->declare_parameter<bool>("include_autonomy", true);
   this->declare_parameter<bool>("include_odom_columns", false);
   this->declare_parameter<bool>("include_cmd_vel_columns", false);
+  this->declare_parameter<bool>("include_aruco_detections", true);
 
   this->declare_parameter<std::string>("gps_topic", "/gps/fix");
   this->declare_parameter<std::string>("odom_topic", "/odom");
@@ -155,6 +207,7 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
   this->declare_parameter<std::string>("manual_cmd_topic", "/cmd_vel_manual");
   this->declare_parameter<std::string>("auto_cmd_topic", "/cmd_vel_aruco");
   this->declare_parameter<std::string>("start_topic", "/aruco_mission/start");
+  this->declare_parameter<std::string>("aruco_detections_topic", "/aruco_detections");
   this->declare_parameter<std::string>("command_topic", "/control_history/command");
   this->declare_parameter<std::string>("action_topic", "/control_history/action");
   this->declare_parameter<std::string>("result_topic", "/control_history/result");
@@ -185,6 +238,7 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
   include_autonomy_ = this->get_parameter("include_autonomy").as_bool();
   include_odom_columns_ = this->get_parameter("include_odom_columns").as_bool();
   include_cmd_vel_columns_ = this->get_parameter("include_cmd_vel_columns").as_bool();
+  include_aruco_detections_ = this->get_parameter("include_aruco_detections").as_bool();
   aruco_start_enabled_ = false;
 
   target_lat_ = this->get_parameter("target_latitude").as_double();
@@ -200,6 +254,7 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
   const auto manual_cmd_topic = this->get_parameter("manual_cmd_topic").as_string();
   const auto auto_cmd_topic = this->get_parameter("auto_cmd_topic").as_string();
   const auto start_topic = this->get_parameter("start_topic").as_string();
+  const auto aruco_detections_topic = this->get_parameter("aruco_detections_topic").as_string();
   const auto command_topic = this->get_parameter("command_topic").as_string();
   const auto action_topic = this->get_parameter("action_topic").as_string();
   const auto result_topic = this->get_parameter("result_topic").as_string();
@@ -224,6 +279,9 @@ ControlHistoryCsvLoggerNode::ControlHistoryCsvLoggerNode(const rclcpp::NodeOptio
   auto_cmd_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
     auto_cmd_topic, sensor_qos,
     std::bind(&ControlHistoryCsvLoggerNode::on_auto_cmd_vel, this, std::placeholders::_1));
+  aruco_detections_sub_ = this->create_subscription<aruco_opencv_msgs::msg::ArucoDetection>(
+    aruco_detections_topic, sensor_qos,
+    std::bind(&ControlHistoryCsvLoggerNode::on_aruco_detections, this, std::placeholders::_1));
   start_sub_ = this->create_subscription<std_msgs::msg::Bool>(
     start_topic, 10,
     std::bind(&ControlHistoryCsvLoggerNode::on_start, this, std::placeholders::_1));
@@ -300,6 +358,11 @@ void ControlHistoryCsvLoggerNode::open_csv_and_write_header_if_needed()
       header.emplace_back("CmdVel-Linear-X");
       header.emplace_back("CmdVel-Linear-Y");
       header.emplace_back("CmdVel-Angular-Z");
+    }
+    if (include_aruco_detections_) {
+      header.emplace_back("Aruco-Marker-Count");
+      header.emplace_back("Aruco-Marker-Ids");
+      header.emplace_back("Aruco-Marker-Poses");
     }
     if (include_checked_point_) {
       header.emplace_back("Checked-point");
@@ -454,6 +517,14 @@ void ControlHistoryCsvLoggerNode::on_checked_point(const std_msgs::msg::String::
   checked_point_ = msg->data;
 }
 
+void ControlHistoryCsvLoggerNode::on_aruco_detections(
+  const aruco_opencv_msgs::msg::ArucoDetection::SharedPtr msg)
+{
+  aruco_marker_count_ = msg->markers.size();
+  aruco_marker_ids_ = format_marker_ids(msg);
+  aruco_marker_poses_ = format_marker_poses(msg);
+}
+
 void ControlHistoryCsvLoggerNode::on_target_latitude(const std_msgs::msg::Float64::SharedPtr msg)
 {
   target_lat_ = msg->data;
@@ -495,6 +566,11 @@ void ControlHistoryCsvLoggerNode::on_timer()
     row.emplace_back(format_double(last_cmd_linear_.x, 3));
     row.emplace_back(format_double(last_cmd_linear_.y, 3));
     row.emplace_back(format_double(last_cmd_angular_, 3));
+  }
+  if (include_aruco_detections_) {
+    row.emplace_back(std::to_string(aruco_marker_count_));
+    row.emplace_back(aruco_marker_ids_);
+    row.emplace_back(aruco_marker_poses_);
   }
   if (include_checked_point_) {
     row.emplace_back(checked_point_);

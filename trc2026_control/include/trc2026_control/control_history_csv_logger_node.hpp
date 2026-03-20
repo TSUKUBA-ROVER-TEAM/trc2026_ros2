@@ -4,6 +4,7 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "geometry_msgs/msg/twist.hpp"
+#include "aruco_opencv_msgs/msg/aruco_detection.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "sensor_msgs/msg/nav_sat_fix.hpp"
 #include "std_msgs/msg/bool.hpp"
@@ -11,6 +12,7 @@
 #include "std_msgs/msg/string.hpp"
 
 #include <fstream>
+#include <cstddef>
 #include <string>
 #include <vector>
 
@@ -41,6 +43,7 @@ private:
   void on_action(const std_msgs::msg::String::SharedPtr msg);
   void on_result(const std_msgs::msg::String::SharedPtr msg);
   void on_checked_point(const std_msgs::msg::String::SharedPtr msg);
+  void on_aruco_detections(const aruco_opencv_msgs::msg::ArucoDetection::SharedPtr msg);
   void on_target_latitude(const std_msgs::msg::Float64::SharedPtr msg);
   void on_target_longitude(const std_msgs::msg::Float64::SharedPtr msg);
   void on_target_azimuth(const std_msgs::msg::Float64::SharedPtr msg);
@@ -59,6 +62,7 @@ private:
   bool include_autonomy_;
   bool include_odom_columns_;
   bool include_cmd_vel_columns_;
+  bool include_aruco_detections_;
   double intervention_hold_sec_;
   bool aruco_start_enabled_;
 
@@ -81,6 +85,9 @@ private:
   std::string last_action_;
   std::string last_result_;
   std::string checked_point_;
+  size_t aruco_marker_count_;
+  std::string aruco_marker_ids_;
+  std::string aruco_marker_poses_;
 
   rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr gps_sub_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
@@ -92,6 +99,7 @@ private:
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr action_sub_;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr result_sub_;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr checked_point_sub_;
+  rclcpp::Subscription<aruco_opencv_msgs::msg::ArucoDetection>::SharedPtr aruco_detections_sub_;
   rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr target_latitude_sub_;
   rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr target_longitude_sub_;
   rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr target_azimuth_sub_;

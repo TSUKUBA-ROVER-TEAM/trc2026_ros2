@@ -87,6 +87,7 @@ ament_target_dependencies(control_history_csv_logger_node_component
   rclcpp
   rclcpp_components
   geometry_msgs
+  aruco_opencv_msgs
   std_msgs
   nav_msgs
   sensor_msgs
